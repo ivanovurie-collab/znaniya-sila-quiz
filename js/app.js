@@ -151,6 +151,8 @@
         // Per-discipline correct/total for the battle currently in progress — reset at the start of
         // every quiz-start function, read by renderBattleBreakdown() when that battle ends.
         let battleDisciplineBreakdown = {};
+        // Same idea, one level deeper: battleTopicBreakdown[category][topic] = { correct, total }.
+        let battleTopicBreakdown = {};
         let score = 0;
         let scoreP2 = 0;
         let comboStreak = 0;
@@ -345,6 +347,7 @@
             playSound('click');
             closeModal('campaignModal');
             battleDisciplineBreakdown = {};
+            battleTopicBreakdown = {};
 
             const pool = getCampaignStagePool(stage);
             pool.sort(() => Math.random() - 0.5);
@@ -1863,6 +1866,7 @@
             }
             playSound('click');
             battleDisciplineBreakdown = {};
+            battleTopicBreakdown = {};
 
             practiceMode = 'review';
             gameMode = 'solo';
@@ -1885,6 +1889,7 @@
         function startStudyQuiz() {
             playSound('click');
             battleDisciplineBreakdown = {};
+            battleTopicBreakdown = {};
 
             let pool = selectedDiscipline === 'all'
                 ? [...ALL_QUESTIONS]
@@ -2083,6 +2088,20 @@
             return (rows.length > 0 && rows[0].pct < threshold) ? rows[0] : null;
         }
 
+        // Same idea one level deeper: the weakest topic inside a single discipline, using all-time
+        // topicStats (not just the battle that just ended) so it's a stable, low-noise recommendation.
+        function getWeakestTopicIn(cat, minSample, threshold) {
+            minSample = minSample || 3;
+            threshold = threshold === undefined ? 75 : threshold;
+            const topics = (playerData.topicStats && playerData.topicStats[cat]) || {};
+            const rows = Object.keys(topics).map(topic => {
+                const t = topics[topic];
+                return { topic, pct: (t.correct / t.total) * 100, total: t.total };
+            }).filter(r => r.total >= minSample);
+            rows.sort((a, b) => a.pct - b.pct);
+            return (rows.length > 0 && rows[0].pct < threshold) ? rows[0] : null;
+        }
+
         // Finer-grained 4-band colour used inside the topic breakdown (the discipline bar above it
         // keeps its own 3-band scheme so its look doesn't change for players who never expand it).
         function topicAccuracyColor(pct) {
@@ -2184,19 +2203,37 @@
                 const pct = Math.round((s.correct / s.total) * 100);
                 const isGood = pct >= 70;
                 const row = document.createElement('div');
-                row.className = 'flex items-center justify-between text-[11px] font-mono';
+                row.className = 'space-y-0.5';
+
+                const topics = battleTopicBreakdown[cat] || {};
+                const topicRowsHtml = Object.keys(topics).map(topic => {
+                    const t = topics[topic];
+                    const tpct = Math.round((t.correct / t.total) * 100);
+                    return `
+                        <div class="flex items-center justify-between text-[10px] font-mono pl-3">
+                            <span class="text-slate-500">└ ${topic}</span>
+                            <span style="color:${topicAccuracyColor(tpct)}">${t.correct}/${t.total} ${topicAccuracyDot(tpct)}</span>
+                        </div>
+                    `;
+                }).join('');
+
                 row.innerHTML = `
-                    <span class="text-slate-300">${DISCIPLINE_LABELS[cat] || cat}</span>
-                    <span class="${isGood ? 'text-lime-400' : 'text-red-400'} font-bold">${s.correct}/${s.total} ${isGood ? '🟢' : '🔴'}</span>
+                    <div class="flex items-center justify-between text-[11px] font-mono">
+                        <span class="text-slate-300">${DISCIPLINE_LABELS[cat] || cat}</span>
+                        <span class="${isGood ? 'text-lime-400' : 'text-red-400'} font-bold">${s.correct}/${s.total} ${isGood ? '🟢' : '🔴'}</span>
+                    </div>
+                    ${topicRowsHtml}
                 `;
                 rowsEl.appendChild(row);
             });
 
             const weak = getWeakestDiscipline();
             if (weak) {
+                const weakTopic = getWeakestTopicIn(weak.cat);
+                const topicSuffix = weakTopic ? ` — особенно тема «${weakTopic.topic}» (${Math.round(weakTopic.pct)}%)` : '';
                 weakBox.classList.remove('hidden');
                 weakBox.innerHTML = `
-                    <div class="text-amber-400 font-military text-xs">⚠️ Слабое место: ${weak.label} — ${Math.round(weak.pct)}%</div>
+                    <div class="text-amber-400 font-military text-xs">⚠️ Слабое место: ${weak.label} — ${Math.round(weak.pct)}%${topicSuffix}</div>
                     <button onclick="trainWeakDiscipline('${weak.cat}')" class="btn-amber-glow py-2 px-4 rounded-lg font-military text-[11px] uppercase">ТРЕНИРОВАТЬ СЛАБОЕ МЕСТО</button>
                 `;
             } else {
@@ -2438,6 +2475,7 @@
             practiceMode = null;
             activeCampaignStageIndex = null;
             battleDisciplineBreakdown = {};
+            battleTopicBreakdown = {};
 
             let pool = selectedDiscipline === 'all'
                 ? [...ALL_QUESTIONS]
@@ -2612,6 +2650,12 @@
             if (!battleDisciplineBreakdown[q.category]) battleDisciplineBreakdown[q.category] = { correct: 0, total: 0 };
             battleDisciplineBreakdown[q.category].total++;
             if (isCorrect) battleDisciplineBreakdown[q.category].correct++;
+            if (q.topic) {
+                if (!battleTopicBreakdown[q.category]) battleTopicBreakdown[q.category] = {};
+                if (!battleTopicBreakdown[q.category][q.topic]) battleTopicBreakdown[q.category][q.topic] = { correct: 0, total: 0 };
+                battleTopicBreakdown[q.category][q.topic].total++;
+                if (isCorrect) battleTopicBreakdown[q.category][q.topic].correct++;
+            }
             const expBox = document.getElementById('explanationBox');
             const expHeader = document.getElementById('explanationHeader');
             const expText = document.getElementById('explanationText');
