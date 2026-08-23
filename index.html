@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="ru" class="h-full select-none">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Знания — Сила: Курсантский Квиз v4.8 (Tactical Profile & Audio)</title>
+
+    <meta name="theme-color" content="#050a07">
+    <meta name="description" content="Геймифицированная викторина в военно-тактическом стиле.">
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="icons/icon-192.png" type="image/png">
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+
+    <!-- Tailwind CSS (compiled locally, see css/tailwind-input.css) -->
+    <link rel="stylesheet" href="css/tailwind.css">
+
+    <!-- Custom HUD/tactical styling -->
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Allerta+Stencil&family=Black+Ops+One&family=Chakra+Petch:ital,wght@0,400;0,600;0,700;1,600&family=Russo+One&display=swap" rel="stylesheet">
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+</head>
+<body class="military-bg min-h-screen text-slate-100 flex justify-center items-center relative overflow-x-hidden overflow-y-auto" id="bodyFxLayer">
+
+    <!-- Custom Background Layers (image / live video wallpaper) — sit behind everything else -->
+    <div id="customBgImage" class="hidden fixed inset-0 bg-cover bg-center" style="z-index: 0;"></div>
+    <video id="customBgVideo" class="hidden fixed inset-0 w-full h-full object-cover" style="z-index: 0;" autoplay loop playsinline></video>
+
+    <!-- Topography Overlay -->
+    <div class="topo-overlay"></div>
+
+    <!-- Radar Pulse in Background -->
+    <div class="radar-sweep"></div>
+
+    <!-- VFX Canvas Overlay -->
+    <canvas id="vfxCanvas" class="fixed inset-0 w-full h-full pointer-events-none z-40"></canvas>
+
+    <!-- Scanline Overlay -->
+    <div class="scanline-container"><div class="scanline"></div></div>
+
+    <!-- Main Container -->
+    <div class="phone-container p-3 sm:p-4 flex flex-col justify-between w-full h-full min-h-screen relative z-10">
+
+        <!-- Header Bar -->
+        <header class="w-full pt-1 pb-2 flex items-center justify-between border-b border-lime-500/30 bg-slate-950/60 backdrop-blur-md px-2 rounded-xl">
+            
+            <!-- Player Tokens / Coins Display -->
+            <div onclick="openModal('armoryModal')" class="cursor-pointer flex items-center space-x-1.5 bg-amber-950/90 border border-amber-500/60 px-2.5 py-1 rounded-lg text-amber-300 font-mono text-xs active:scale-95 transition-all shadow-md">
+                <span class="text-sm">🪖</span>
+                <span id="headerTokensDisplay" class="font-bold text-amber-400">0</span>
+                <span class="text-[9px] text-amber-500 font-military uppercase">ЖЕТОНЫ</span>
+            </div>
+
+            <!-- Quick Action Buttons -->
+            <div class="flex items-center space-x-1">
+                <!-- Profile Button -->
+                <button onclick="openModal('profileModal')" class="px-1.5 py-1 rounded-lg bg-lime-950/80 border border-lime-500/50 text-lime-400 flex flex-col items-center active:scale-95 transition-all">
+                    <span class="text-xs leading-none">🪪</span>
+                    <span class="text-[7px] font-military uppercase mt-0.5 tracking-tight">ПРОФИЛЬ</span>
+                </button>
+
+                <!-- Quests Button -->
+                <button onclick="openModal('questsModal')" class="px-1.5 py-1 rounded-lg bg-indigo-950/80 border border-indigo-500/50 text-indigo-300 flex flex-col items-center active:scale-95 transition-all relative">
+                    <span class="text-xs leading-none">📜</span>
+                    <span class="text-[7px] font-military uppercase mt-0.5 tracking-tight">КВЕСТЫ</span>
+                    <span id="questPingDot" class="hidden absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                    <span id="questPingDotStatic" class="hidden absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500"></span>
+                </button>
+
+                <div class="w-px h-6 bg-lime-500/20 mx-0.5"></div>
+
+                <!-- Store Button -->
+                <button onclick="openModal('armoryModal')" class="px-1.5 py-1 rounded-lg bg-amber-950/70 border border-amber-500/50 text-amber-400 flex flex-col items-center active:scale-95 transition-all">
+                    <span class="text-xs leading-none">🎒</span>
+                    <span class="text-[7px] font-military uppercase mt-0.5 tracking-tight">СНАБЖЕНИЕ</span>
+                </button>
+
+                <!-- Music Button -->
+                <button onclick="openModal('musicModal')" class="px-1.5 py-1 rounded-lg bg-slate-900/90 border border-lime-500/40 text-lime-400 flex flex-col items-center active:scale-95 transition-all">
+                    <span class="text-xs leading-none">🎵</span>
+                    <span class="text-[7px] font-military uppercase mt-0.5 tracking-tight">ЗВУК</span>
+                </button>
+
+                <!-- Settings Button -->
+                <button onclick="openModal('settingsModal')" class="px-1.5 py-1 rounded-lg bg-slate-900/90 border border-lime-500/40 text-lime-400 flex flex-col items-center active:scale-95 transition-all">
+                    <span class="text-xs leading-none">⚙️</span>
+                    <span class="text-[7px] font-military uppercase mt-0.5 tracking-tight">НАСТРОЙКИ</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-grow flex flex-col justify-center py-2 relative z-10">
+
+            <!-- SCREEN 1: MAIN MENU -->
+            <section id="screenMenu" class="space-y-3.5 my-auto text-center">
+                
+                <div class="space-y-1">
+                    <div class="inline-flex items-center space-x-2 px-3 py-0.5 rounded-full bg-lime-950/90 border border-lime-500/50 text-lime-400 text-[10px] font-mono tracking-widest uppercase">
+                        <span class="text-lime-400">🛡️</span>
+                        <span>ТАКТИЧЕСКИЙ СИМУЛЯТОР V4.5</span>
+                    </div>
+
+                    <h1 class="text-3xl sm:text-4xl font-military text-amber-400 tracking-wider uppercase drop-shadow-[0_0_18px_rgba(245,158,11,0.6)]">
+                        ЗНАНИЯ — СИЛА
+                    </h1>
+                </div>
+
+                <!-- Main Menu Tactical Profile Card -->
+                <div class="hud-card p-4 space-y-3.5 text-left">
+                    
+                    <!-- Persistent Player Profile Widget -->
+                    <div onclick="openModal('profileModal')" class="cursor-pointer bg-slate-950/90 border border-lime-500/40 rounded-xl p-3 space-y-2 hover:border-lime-400 transition-all">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2.5">
+                                <div id="mainAvatarDisplay" class="text-3xl w-12 h-12 flex items-center justify-center p-1.5 bg-lime-950 border border-lime-400 rounded-lg shadow-md overflow-hidden">🪖</div>
+                                <div>
+                                    <div id="mainCallsignDisplay" class="font-military text-sm text-lime-300">Курсант Иванов</div>
+                                    <div id="mainRankDisplay" class="text-[10px] font-mono text-amber-400 uppercase font-semibold">РАНГ: КУРСАНТ</div>
+                                </div>
+                            </div>
+                            <button onclick="event.stopPropagation(); openModal('profileModal')" class="px-2.5 py-1 rounded bg-lime-950/90 border border-lime-500/60 text-lime-300 font-military text-[10px] uppercase active:scale-95 transition-all">
+                                📊 Профиль
+                            </button>
+                        </div>
+
+                        <!-- XP Progress Bar -->
+                        <div class="space-y-1 pt-1 border-t border-slate-800">
+                            <div class="flex justify-between text-[10px] font-mono">
+                                <span class="text-slate-400">Опыт бойца (XP):</span>
+                                <span id="mainXpVal" class="text-lime-400 font-bold">0 / 100 XP</span>
+                            </div>
+                            <div class="w-full h-2 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+                                <div id="mainXpBar" class="h-full bg-gradient-to-r from-lime-500 to-amber-400 transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                        </div>
+
+                        <!-- Daily Streak Row -->
+                        <div id="menuStreakRow" class="hidden flex items-center justify-between pt-1 border-t border-slate-800 text-[10px] font-mono">
+                            <span class="flex items-center space-x-1 text-orange-300">
+                                <span>🔥</span>
+                                <span id="menuStreakText">Серия: 0 дней</span>
+                            </span>
+                            <span id="menuStreakHint" class="text-amber-400 font-semibold"></span>
+                        </div>
+                    </div>
+
+                    <!-- Main Action Buttons -->
+                    <div class="grid grid-cols-1 gap-2 pt-1">
+                        <button onclick="showScreen('screenSetup')" class="btn-amber-glow w-full py-3.5 rounded-xl text-base font-military tracking-wider uppercase flex items-center justify-center space-x-2 cursor-pointer shadow-lg">
+                            <span class="text-slate-950 text-sm">▶️</span>
+                            <span>БОЕВАЯ СИМУЛЯЦИЯ</span>
+                        </button>
+
+                        <button onclick="openCampaignModal()" class="w-full py-2.5 rounded-xl text-xs font-military tracking-wider uppercase flex items-center justify-center space-x-2 cursor-pointer bg-slate-900/90 border-2 border-purple-500/60 text-purple-300 active:scale-95 transition-all">
+                            <span class="text-sm">🗺️</span>
+                            <span>КАМПАНИЯ: КУРСАНТ → СПЕЦИАЛИСТ</span>
+                        </button>
+
+                        <button onclick="startMiniGameDefusal()" class="btn-purple-glow w-full py-2.5 rounded-xl text-xs font-military tracking-wider uppercase flex items-center justify-center space-x-2 cursor-pointer">
+                            <span class="text-white text-xs">💣</span>
+                            <span>МИНИ-ИГРА «РАЗМИНИРОВАНИЕ» 💣</span>
+                        </button>
+
+                        <button onclick="openDailyChest()" id="btnDailyChest" class="relative w-full py-2.5 rounded-xl text-xs font-military tracking-wider uppercase flex items-center justify-center space-x-2 cursor-pointer bg-gradient-to-r from-amber-600 to-yellow-500 text-slate-950 font-bold active:scale-95 transition-all shadow-lg">
+                            <span class="text-sm">🎁</span>
+                            <span id="btnDailyChestLabel">СУНДУК ДНЯ</span>
+                            <span id="dailyChestPingDot" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
+                            <span id="dailyChestPingDotStatic" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                        </button>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="openDailyQuestion()" id="btnDailyQuestion" class="relative w-full py-2.5 rounded-xl text-[10px] font-military tracking-wider uppercase flex items-center justify-center space-x-1.5 cursor-pointer bg-amber-950/70 border border-amber-500/60 text-amber-300 active:scale-95 transition-all">
+                                <span class="text-xs">🎯</span>
+                                <span>ВОПРОС ДНЯ</span>
+                                <span id="dailyQuestionPingDot" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500 animate-ping"></span>
+                                <span id="dailyQuestionPingDotStatic" class="hidden absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-red-500"></span>
+                            </button>
+                            <button onclick="startReviewQuiz()" id="btnReviewMistakes" class="w-full py-2.5 rounded-xl text-[10px] font-military tracking-wider uppercase flex items-center justify-center space-x-1.5 cursor-pointer bg-slate-900/90 border border-indigo-500/50 text-indigo-300 active:scale-95 transition-all">
+                                <span class="text-xs">📖</span>
+                                <span id="btnReviewMistakesLabel">ОШИБКИ (0)</span>
+                            </button>
+                        </div>
+
+                        <button onclick="openModal('friendsModal')" class="w-full py-2.5 rounded-xl text-xs font-military tracking-wider uppercase flex items-center justify-center space-x-2 cursor-pointer bg-slate-900/90 border border-amber-500/50 text-amber-300 active:scale-95 transition-all">
+                            <span class="text-xs">🏆</span>
+                            <span>РЕЙТИНГ ОТРЯДА</span>
+                        </button>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- SCREEN 2: BATTLE SETUP -->
+            <section id="screenSetup" class="hidden space-y-3 my-auto w-full">
+                <div class="text-center space-y-0.5">
+                    <h2 class="text-xl font-military text-amber-400 uppercase tracking-wide flex items-center justify-center space-x-2">
+                        <span class="text-amber-400 text-base">🎚️</span>
+                        <span>НАСТРОЙКА БОЯ</span>
+                    </h2>
+                    <p class="text-[11px] text-slate-400 font-mono">Выберите режим и военную дисциплину</p>
+                </div>
+
+                <div class="hud-card p-3.5 space-y-3.5">
+                    
+                    <!-- Mode Selector -->
+                    <div class="space-y-1.5">
+                        <div class="text-[11px] font-mono text-lime-400 uppercase tracking-wider flex items-center space-x-1.5">
+                            <span>🎮</span>
+                            <span>1. РЕЖИМ БОЯ:</span>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-2">
+                            <div onclick="selectGameMode('solo')" id="modeSolo" class="cursor-pointer border-2 border-lime-500 bg-lime-950/60 p-2 rounded-lg flex flex-col items-center justify-center text-center space-y-1 active:scale-95 transition-all">
+                                <span class="text-lg">👤</span>
+                                <span class="font-military text-[10px] text-slate-100">Соло</span>
+                            </div>
+
+                            <div onclick="selectGameMode('boss')" id="modeBoss" class="cursor-pointer border border-purple-500/60 bg-purple-950/60 p-2 rounded-lg flex flex-col items-center justify-center text-center space-y-1 active:scale-95 transition-all">
+                                <span class="text-lg">👹</span>
+                                <span class="font-military text-[10px] text-purple-300">БОСС-РЕЙД</span>
+                            </div>
+
+                            <div onclick="selectGameMode('pvp')" id="modePvp" class="cursor-pointer border border-slate-700 bg-slate-900/60 p-2 rounded-lg flex flex-col items-center justify-center text-center space-y-1 active:scale-95 transition-all">
+                                <span class="text-lg">⚔️</span>
+                                <span class="font-military text-[10px] text-slate-100">Дуэль 1v1</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Discipline Selector -->
+                    <div class="space-y-1.5 pt-2 border-t border-slate-800">
+                        <div class="text-[11px] font-mono text-lime-400 uppercase tracking-wider flex items-center space-x-1.5">
+                            <span>📖</span>
+                            <span>2. ДИСЦИПЛИНА И СНАРЯЖЕНИЕ:</span>
+                        </div>
+
+                        <div class="max-h-[210px] overflow-y-auto pr-1 -mr-1">
+                            <div class="grid grid-cols-2 gap-1.5 text-xs">
+                                <button onclick="setDiscipline('all')" class="setup-disc-btn border-2 border-amber-500 bg-amber-950/40 py-2 px-2 rounded-lg font-military text-amber-300 flex items-center justify-start space-x-2 active:scale-95 transition-all" data-disc="all">
+                                    <span>💥</span><span class="truncate">Все дисциплины</span>
+                                </button>
+                                <button onclick="setDiscipline('gear')" class="setup-disc-btn border border-slate-700 bg-slate-900/60 py-2 px-2 rounded-lg font-military text-slate-300 flex items-center justify-start space-x-2 active:scale-95 transition-all" data-disc="gear">
+                                    <span>🪖</span><span class="truncate">Вооружение & Экипировка</span>
+                                </button>
+                                <button onclick="setDiscipline('rhbz')" class="setup-disc-btn border border-slate-700 bg-slate-900/60 py-2 px-2 rounded-lg font-military text-slate-300 flex items-center justify-start space-x-2 active:scale-95 transition-all" data-disc="rhbz">
+                                    <span>🛡️</span><span class="truncate">РХБЗ</span>
+                                </button>
+                                <button onclick="setDiscipline('tactics')" class="setup-disc-btn border border-slate-700 bg-slate-900/60 py-2 px-2 rounded-lg font-military text-slate-300 flex items-center justify-start space-x-2 active:scale-95 transition-all" data-disc="tactics">
+                                    <span>⚔️</span><span class="truncate">Тактика</span>
+                                </button>
+                                <button onclick="setDiscipline('btv')" class="setup-disc-btn border border-slate-700 bg-slate-900/60 py-2 px-2 rounded-lg font-military text-slate-300 flex items-center justify-start space-x-2 active:scale-95 transition-all" data-disc="btv">
+                                    <span>🚜</span><span class="truncate">Бронетехника</span>
+                                </button>
+                                <button onclick="setDiscipline('fire')" class="setup-disc-btn border border-slate-700 bg-slate-900/60 py-2 px-2 rounded-lg font-military text-slate-300 flex items-center justify-start space-x-2 active:scale-95 transition-all" data-disc="fire">
+                                    <span>🎯</span><span class="truncate">Огневая подготовка</span>
+                                </button>
+                                <button onclick="setDiscipline('svyaz')" class="setup-disc-btn border border-slate-700 bg-slate-900/60 py-2 px-2 rounded-lg font-military text-slate-300 flex items-center justify-start space-x-2 active:scale-95 transition-all" data-disc="svyaz">
+                                    <span>📡</span><span class="truncate">Связь</span>
+                                </button>
+                                <button onclick="setDiscipline('ustav')" class="setup-disc-btn border border-slate-700 bg-slate-900/60 py-2 px-2 rounded-lg font-military text-slate-300 flex items-center justify-start space-x-2 active:scale-95 transition-all" data-disc="ustav">
+                                    <span>📘</span><span class="truncate">Уставы и звания</span>
+                                </button>
+                                <button onclick="setDiscipline('engineer')" class="setup-disc-btn border border-slate-700 bg-slate-900/60 py-2 px-2 rounded-lg font-military text-slate-300 flex items-center justify-start space-x-2 active:scale-95 transition-all" data-disc="engineer">
+                                    <span>🔧</span><span class="truncate">Инженерная подготовка</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Difficulty Selector -->
+                    <div class="space-y-1.5 pt-2 border-t border-slate-800">
+                        <div class="text-[11px] font-mono text-lime-400 uppercase tracking-wider flex items-center space-x-1.5">
+                            <span>🎖️</span>
+                            <span>3. УРОВЕНЬ СЛОЖНОСТИ:</span>
+                        </div>
+
+                        <div class="grid grid-cols-4 gap-1.5 text-[10px]">
+                            <button onclick="setDifficulty('all')" class="setup-diff-btn border-2 border-amber-500 bg-amber-950/40 py-2 px-1 rounded-lg font-military text-amber-300 flex flex-col items-center justify-center space-y-0.5 active:scale-95 transition-all" data-diff="all">
+                                <span>🎚️</span><span class="truncate">Все</span>
+                            </button>
+                            <button onclick="setDifficulty('private')" class="setup-diff-btn border border-slate-700 bg-slate-900/60 py-2 px-1 rounded-lg font-military text-slate-300 flex flex-col items-center justify-center space-y-0.5 active:scale-95 transition-all" data-diff="private">
+                                <span>🪖</span><span class="truncate">Рядовой</span>
+                            </button>
+                            <button onclick="setDifficulty('sergeant')" class="setup-diff-btn border border-slate-700 bg-slate-900/60 py-2 px-1 rounded-lg font-military text-slate-300 flex flex-col items-center justify-center space-y-0.5 active:scale-95 transition-all" data-diff="sergeant">
+                                <span>🥈</span><span class="truncate">Сержант</span>
+                            </button>
+                            <button onclick="setDifficulty('officer')" class="setup-diff-btn border border-slate-700 bg-slate-900/60 py-2 px-1 rounded-lg font-military text-slate-300 flex flex-col items-center justify-center space-y-0.5 active:scale-95 transition-all" data-diff="officer">
+                                <span>⭐</span><span class="truncate">Офицер</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Navigation Action Buttons -->
+                    <div class="flex items-center space-x-2 pt-2">
+                        <button onclick="showScreen('screenMenu')" class="py-3 px-4 rounded-lg bg-slate-900 border border-slate-700 text-xs font-military text-slate-300 active:scale-95 transition-all">
+                            <span>⬅️</span>
+                        </button>
+
+                        <button onclick="startQuiz()" class="btn-green-glow flex-1 py-3 rounded-lg text-base font-military uppercase tracking-wider flex items-center justify-center space-x-2 cursor-pointer">
+                            <span>В БОЙ!</span>
+                            <span>💣</span>
+                        </button>
+                    </div>
+
+                    <button onclick="startStudyQuiz()" class="w-full py-2.5 rounded-lg text-[11px] font-military uppercase tracking-wider flex items-center justify-center space-x-2 cursor-pointer bg-slate-900/80 border border-indigo-500/40 text-indigo-300 active:scale-95 transition-all">
+                        <span>🎓</span>
+                        <span>УЧЕБНЫЙ РЕЖИМ (без таймера и штрафов)</span>
+                    </button>
+
+                </div>
+            </section>
+
+            <!-- SCREEN 3: QUIZ HUD ARENA -->
+            <section id="screenQuiz" class="hidden space-y-2.5 my-auto w-full">
+                
+                <!-- HUD Top Progress Row -->
+                <div class="flex items-center justify-between text-[11px] font-mono">
+                    <div class="flex items-center space-x-1.5 text-amber-400 font-semibold">
+                        <span>📋</span>
+                        <span id="hudQuestionProgress">1 / 10</span>
+                    </div>
+
+                    <!-- Combo Banner Badge -->
+                    <div id="comboBanner" class="hidden bg-gradient-to-r from-amber-500 to-red-500 text-slate-950 px-2 py-0.5 rounded font-military text-[10px] uppercase font-bold animate-combo">
+                        🔥 СЕРИЯ x2.0
+                    </div>
+
+                    <span id="hudDisciplineBadge" class="bg-amber-950/80 border border-amber-600/50 text-amber-300 px-2 py-0.5 rounded text-[10px] font-military uppercase">
+                        РХБЗ
+                    </span>
+                </div>
+
+                <!-- BOSS HP BAR (Visible only in Boss Mode) -->
+                <div id="bossHpContainer" class="hidden bg-slate-950 border border-purple-500/60 p-2 rounded-xl space-y-1">
+                    <div class="flex justify-between items-center text-xs font-military">
+                        <span class="text-purple-400 flex items-center space-x-1">
+                            <span class="text-lg">👹</span>
+                            <span>БОСС: ГЕНЕРАЛ-ЭКЗАМЕНАТОР</span>
+                        </span>
+                        <span id="bossHpText" class="text-purple-300 font-mono text-[11px]">100 / 100 HP</span>
+                    </div>
+                    <div class="w-full h-3 bg-slate-900 rounded-full overflow-hidden border border-purple-800">
+                        <div id="bossHpBar" class="h-full bg-gradient-to-r from-purple-600 to-red-500 transition-all duration-300" style="width: 100%"></div>
+                    </div>
+                </div>
+
+                <!-- Player Score & Timer Header Card -->
+                <div class="hud-card p-2.5 rounded-xl flex items-center justify-between" id="scoreHeaderCard">
+                    <div class="flex items-center space-x-2">
+                        <div id="p1Box" class="p-1.5 rounded-lg border border-transparent transition-all flex items-center space-x-1.5">
+                            <div id="playerAvatarDisplay" class="text-2xl w-8 h-8 flex items-center justify-center overflow-hidden rounded">🪖</div>
+                            <div>
+                                <div id="p1ScoreNameDisplay" class="font-military text-xs text-lime-400 leading-tight">Игрок 1</div>
+                                <div id="p1ScoreValDisplay" class="text-[10px] font-mono text-slate-300">0 б.</div>
+                            </div>
+                        </div>
+
+                        <!-- Opponent Score -->
+                        <div id="oppScoreBox" class="hidden border-l border-slate-800 pl-2 ml-1 p-1.5 rounded-lg border border-transparent transition-all flex items-center space-x-1.5">
+                            <div id="oppAvatarDisplay" class="text-2xl">🤖</div>
+                            <div>
+                                <div id="oppScoreNameDisplay" class="font-military text-xs text-red-400 leading-tight">Соперник</div>
+                                <div id="oppScoreValDisplay" class="text-[10px] font-mono text-slate-300">0 б.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timer Count + Flag Button -->
+                    <div class="flex items-center space-x-2.5">
+                        <div class="text-right">
+                            <div id="hudTimer" class="font-military text-2xl text-amber-400 leading-none">20</div>
+                            <span class="text-[8px] text-slate-400 font-mono tracking-widest uppercase block">СЕК</span>
+                        </div>
+
+                        <button onclick="surrenderQuiz()" class="p-2 rounded-lg bg-red-950/60 border border-red-500/50 text-red-400 text-xs active:scale-95 transition-all">
+                            <span>🚩</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Question Card -->
+                <div id="questionCardFrame" class="question-frame p-3.5 rounded-xl text-center my-1 transition-all duration-300">
+                    <h3 id="questionText" class="text-xs sm:text-sm font-military text-slate-100 leading-snug">
+                        Текст вопроса загружен...
+                    </h3>
+                </div>
+
+                <!-- Tactical Boosters Bar -->
+                <div class="flex items-center justify-between space-x-2 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800 text-[10px] font-mono">
+                    <span class="text-slate-400 uppercase font-semibold">ПОДСКАЗКИ:</span>
+                    <div class="flex space-x-2">
+                        <button id="btnPerk5050" onclick="usePerk5050()" class="px-2.5 py-1 rounded bg-amber-950/80 border border-amber-500/60 text-amber-300 font-military flex items-center space-x-1 active:scale-95 transition-all">
+                            <span>🎯 50/50</span>
+                            <span id="badgePerk5050" class="bg-amber-500 text-slate-950 px-1 rounded-full text-[9px]">1</span>
+                        </button>
+                        <button id="btnPerkTime" onclick="usePerkTime()" class="px-2.5 py-1 rounded bg-amber-950/80 border border-amber-500/60 text-amber-300 font-military flex items-center space-x-1 active:scale-95 transition-all">
+                            <span>⏳ +10с</span>
+                            <span id="badgePerkTime" class="bg-amber-500 text-slate-950 px-1 rounded-full text-[9px]">1</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Answer Options Box -->
+                <div class="hud-card p-3 rounded-xl space-y-2 relative overflow-hidden" id="answersCard">
+                    <div id="answersGrid" class="space-y-2 pt-0.5"></div>
+                </div>
+
+                <!-- Debrief / Explanation -->
+                <div id="explanationBox" class="hidden bg-slate-900/95 border border-lime-500/40 p-3 rounded-xl space-y-2">
+                    <div class="flex items-center justify-between font-military text-xs uppercase" id="explanationHeader"></div>
+                    <p id="explanationText" class="text-[11px] text-slate-300 leading-snug font-mono"></p>
+                    <div class="pt-1 flex justify-end">
+                        <button onclick="nextQuestion()" class="btn-green-glow py-2 px-4 rounded-lg text-xs font-military flex items-center space-x-1 cursor-pointer">
+                            <span>ДАЛЕЕ</span>
+                            <span class="text-[10px]">▶</span>
+                        </button>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- SCREEN 4: RESULTS & RANK DEBRIEFING -->
+            <section id="screenResults" class="hidden hud-card p-4 rounded-xl space-y-3.5 text-center my-auto w-full">
+                <div class="space-y-1">
+                    <div class="inline-block px-2.5 py-0.5 rounded bg-lime-950/60 border border-lime-500/40 text-lime-400 text-[10px] font-mono uppercase tracking-widest">
+                        [ ТАКТИЧЕСКИЙ РАПОРТ ]
+                    </div>
+                    <h2 class="text-2xl font-military text-amber-400 uppercase tracking-wide">
+                        Тест Завершен
+                    </h2>
+                </div>
+
+                <!-- Rank & Rewards Earned Banner -->
+                <div class="bg-slate-950/80 border border-amber-500/40 p-3 rounded-xl space-y-1.5 relative overflow-hidden">
+                    <div id="rankIcon" class="text-4xl">⭐️</div>
+                    <div id="rankTitle" class="text-lg font-military text-amber-400 uppercase tracking-wider">
+                        ГЕНЕРАЛ-МАЙОР
+                    </div>
+                    
+                    <div class="flex items-center justify-center space-x-3 pt-1 border-t border-slate-800 text-xs font-mono">
+                        <div class="text-amber-300 font-bold">+<span id="earnedTokens">0</span> 🪖 Жетонов</div>
+                        <div class="text-lime-300 font-bold">+<span id="earnedXp">0</span> XP Опыта</div>
+                    </div>
+                </div>
+
+                <!-- Daily Streak Banner (shown only when today's streak was just credited) -->
+                <div id="streakBanner" class="hidden flex bg-orange-950/50 border border-orange-500/50 p-2.5 rounded-xl items-center justify-between text-xs font-mono">
+                    <span class="flex items-center space-x-1.5 text-orange-300 font-military">
+                        <span class="text-base">🔥</span>
+                        <span id="streakBannerText">Серия: 1 день подряд!</span>
+                    </span>
+                    <span id="streakBannerBonus" class="text-amber-300 font-bold">+0 🪖</span>
+                </div>
+
+                <div id="campaignResultBanner" class="hidden"></div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-2 gap-2 text-center font-mono">
+                    <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                        <span class="text-[9px] text-slate-400 block uppercase">Баллы</span>
+                        <span id="resScore" class="text-lg font-military text-amber-400">0</span>
+                    </div>
+                    <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                        <span class="text-[9px] text-slate-400 block uppercase">Точность</span>
+                        <span id="resAccuracy" class="text-lg font-military text-lime-400">0%</span>
+                    </div>
+                    <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                        <span class="text-[9px] text-slate-400 block uppercase">Ответы</span>
+                        <span id="resCorrect" class="text-lg font-military text-lime-400">0/10</span>
+                    </div>
+                    <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                        <span class="text-[9px] text-slate-400 block uppercase">Макс Комбо</span>
+                        <span id="resMaxCombo" class="text-xs font-military text-amber-400 mt-1 block">x0</span>
+                    </div>
+                </div>
+
+                <!-- Battle Breakdown: per-discipline result for THIS battle + weak-spot training CTA -->
+                <div id="battleBreakdownBox" class="hidden bg-slate-900/80 border border-slate-800 rounded-xl p-3 space-y-2 text-left">
+                    <div class="text-[10px] text-slate-400 uppercase font-semibold font-mono text-center">РАЗБОР БОЯ ПО ДИСЦИПЛИНАМ:</div>
+                    <div id="battleBreakdownRows" class="space-y-1"></div>
+                    <div id="battleWeakSpotBox" class="hidden pt-2 border-t border-slate-800 text-center space-y-1.5"></div>
+                </div>
+
+                <button onclick="shareResult()" class="w-full py-2.5 rounded-lg font-military text-xs uppercase bg-slate-900/90 border border-amber-500/50 text-amber-300 active:scale-95 transition-all">
+                    📤 ПОДЕЛИТЬСЯ РЕЗУЛЬТАТОМ
+                </button>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center space-x-2 pt-1">
+                    <button onclick="restartQuiz()" class="btn-green-glow flex-1 py-3 rounded-lg font-military text-xs cursor-pointer">
+                        <span class="mr-1">🔄</span> ПОВТОРИТЬ
+                    </button>
+                    <button onclick="showScreen('screenMenu')" class="py-3 px-4 rounded-lg bg-slate-900 border border-slate-700 font-military text-xs text-slate-300 cursor-pointer">
+                        МЕНЮ
+                    </button>
+                </div>
+            </section>
+
+        </main>
+
+        <footer class="w-full pt-2 pb-1 text-center text-[9px] font-mono text-slate-500 border-t border-slate-800/60 flex items-center justify-between">
+            <div>ВИТУ ВА МТО © 2026</div>
+            <div class="text-lime-600">ШИФР: AES-256</div>
+        </footer>
+
+    </div>
+
+    <!-- MODAL 0: ONBOARDING (FIRST LAUNCH ONLY) -->
+    <div id="onboardingModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="hud-card p-5 rounded-2xl max-w-xs w-full space-y-4 border-lime-500/60 text-center">
+            <div id="onboardingBody" class="space-y-3 font-mono text-xs min-h-[210px] flex flex-col items-center justify-center"></div>
+
+            <div class="flex items-center justify-center space-x-1.5" id="onboardingDots"></div>
+
+            <div class="flex items-center space-x-2">
+                <button onclick="skipOnboarding()" class="py-2.5 px-3 rounded-lg bg-slate-900 border border-slate-700 font-military text-[11px] text-slate-400">
+                    ПРОПУСТИТЬ
+                </button>
+                <button onclick="onboardingNext()" id="onboardingNextBtn" class="btn-green-glow flex-1 py-2.5 rounded-lg font-military text-xs uppercase">
+                    ДАЛЕЕ ▶
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 1: PERSONAL PLAYER PROFILE (ЛИЧНЫЙ ПРОФИЛЬ) -->
+    <div id="profileModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+        <div class="hud-card p-4 rounded-2xl max-w-sm w-full space-y-3.5 border-lime-500/50 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <h3 class="font-military text-base text-lime-400 flex items-center space-x-2">
+                    <span class="text-sm">🪪</span>
+                    <span>ЛИЧНЫЙ ПРОФИЛЬ ИГРОКА</span>
+                </h3>
+                <button onclick="closeModal('profileModal')" class="text-slate-400 text-base">
+                    <span>✖️</span>
+                </button>
+            </div>
+
+            <!-- Profile Info Banner -->
+            <div class="bg-slate-950/80 border border-lime-500/40 p-3 rounded-xl flex items-center space-x-3">
+                <div class="relative shrink-0">
+                    <div id="profileAvatarBig" class="text-4xl w-16 h-16 flex items-center justify-center p-2 bg-lime-950 border border-lime-400 rounded-xl overflow-hidden">🪖</div>
+                    <button onclick="triggerPhotoUpload()" class="absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full bg-amber-500 border-2 border-slate-950 text-slate-950 text-[10px] flex items-center justify-center active:scale-90 transition-all">
+                        📷
+                    </button>
+                    <input type="file" id="photoUploadInput" accept="image/*" class="hidden" onchange="handleProfilePhotoUpload(event)">
+                </div>
+                <div class="flex-grow space-y-1 min-w-0">
+                    <div class="flex items-center justify-between space-x-1">
+                        <input type="text" id="inputCallsign" maxlength="18" class="bg-slate-900 border border-slate-700 rounded px-2 py-0.5 text-xs font-military text-lime-300 w-28 focus:outline-none focus:border-lime-400 disabled:opacity-50" value="Курсант Ivanov" onchange="updateCallsign(this.value)">
+                        <button id="btnSaveCallsign" onclick="saveCallsign()" class="text-[9px] bg-lime-950 text-lime-300 border border-lime-500/40 px-1.5 py-0.5 rounded shrink-0">
+                            <span>✅</span>
+                        </button>
+                    </div>
+                    <div id="profileRankText" class="text-xs font-military text-amber-400 uppercase">РАНГ: КУРСАНТ</div>
+                    <div id="profileLevelText" class="text-[10px] font-mono text-slate-400">Уровень 1 • 0 / 100 XP</div>
+                </div>
+            </div>
+            <div id="callsignLockNote" class="hidden text-[9px] font-mono text-amber-500/90 bg-amber-950/30 border border-amber-500/20 rounded-lg px-2 py-1.5 -mt-1.5"></div>
+            <button id="btnRemovePhoto" onclick="removeProfilePhoto()" class="hidden text-[9px] font-mono text-red-400 bg-red-950/30 border border-red-500/20 rounded-lg px-2 py-1.5 -mt-1.5 w-full">
+                ✖ Удалить фото и вернуть аватар
+            </button>
+
+            <!-- Profile Frame Picker (unlocked as rank rewards) -->
+            <div id="framePickerBox" class="hidden space-y-1">
+                <div class="text-[10px] text-slate-400 uppercase font-semibold font-mono">Рамка профиля:</div>
+                <div id="framePickerRow" class="flex flex-wrap gap-1.5"></div>
+            </div>
+
+            <!-- Stats Detailed Breakdown -->
+            <div class="space-y-1.5 font-mono text-xs">
+                <div class="text-slate-400 text-[10px] uppercase font-semibold border-b border-slate-800 pb-1">БОЕВАЯ СТАTИСТИКА:</div>
+                <div class="grid grid-cols-2 gap-2 text-center">
+                    <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                        <span class="text-[9px] text-slate-400 block uppercase">Всего симуляций</span>
+                        <span id="profStatGames" class="text-sm font-military text-amber-400">0</span>
+                    </div>
+                    <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                        <span class="text-[9px] text-slate-400 block uppercase">Заработано жетонов</span>
+                        <span id="profStatTokens" class="text-sm font-military text-amber-400">0 🪖</span>
+                    </div>
+                    <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                        <span class="text-[9px] text-slate-400 block uppercase">Боссов повержено</span>
+                        <span id="profStatBosses" class="text-sm font-military text-purple-400">0 👹</span>
+                    </div>
+                    <div class="bg-slate-900/80 p-2 rounded-lg border border-slate-800">
+                        <span class="text-[9px] text-slate-400 block uppercase">Разминирований</span>
+                        <span id="profStatDefusals" class="text-sm font-military text-lime-400">0 💣</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weekly Progress Chart -->
+            <div class="space-y-1.5 pt-2 border-t border-slate-800">
+                <div class="text-slate-400 text-[10px] uppercase font-semibold">ТОЧНОСТЬ ПО НЕДЕЛЯМ:</div>
+                <div id="progressChartBox" class="bg-slate-950/80 border border-slate-800 rounded-lg p-2 flex items-center justify-center"></div>
+            </div>
+
+            <!-- Per-Discipline Accuracy -->
+            <div class="space-y-1.5 pt-2 border-t border-slate-800">
+                <div class="text-slate-400 text-[10px] uppercase font-semibold">ТОЧНОСТЬ ПО ДИСЦИПЛИНАМ:</div>
+                <div id="disciplineStatsBox" class="space-y-1.5"></div>
+                <div id="weakDisciplineHint" class="hidden text-[10px] font-mono text-amber-400 bg-amber-950/30 border border-amber-500/30 rounded-lg px-2 py-1.5"></div>
+            </div>
+
+            <!-- Accomplishments / Badges -->
+            <div class="space-y-2 pt-2 border-t border-slate-800">
+                <div class="text-xs font-mono text-lime-400 uppercase font-semibold">ДОСТИЖЕНИЯ И НАГРАДЫ:</div>
+                <div id="profileAchievementsContainer" class="space-y-1.5 max-h-36 overflow-y-auto pr-1"></div>
+            </div>
+
+            <div class="pt-1">
+                <button onclick="closeModal('profileModal'); openMedalsModal();" class="w-full py-2.5 rounded-lg font-military text-xs uppercase bg-amber-950/60 border border-amber-500/50 text-amber-300 active:scale-95 transition-all">
+                    🏅 МОИ НАГРАДЫ
+                </button>
+            </div>
+
+            <div class="pt-1">
+                <button onclick="closeModal('profileModal'); openSubmitQuestionModal();" class="w-full py-2.5 rounded-lg font-military text-xs uppercase bg-indigo-950/70 border border-indigo-500/50 text-indigo-300 active:scale-95 transition-all">
+                    ✍️ ПРЕДЛОЖИТЬ СВОЙ ВОПРОС
+                </button>
+            </div>
+
+            <div class="pt-1">
+                <button onclick="closeModal('profileModal')" class="btn-green-glow py-2.5 w-full rounded-lg font-military text-xs uppercase">ЗАКРЫТЬ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: ARMORY SHOP -->
+    <div id="armoryModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+        <div class="hud-card p-4 rounded-2xl max-w-sm w-full space-y-3.5 border-amber-500/50 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <h3 class="font-military text-base text-amber-400 flex items-center space-x-2">
+                    <span class="text-sm">🎒</span>
+                    <span>АРСЕНАЛ И СНАБЖЕНИЕ</span>
+                </h3>
+                <button onclick="closeModal('armoryModal')" class="text-slate-400 text-base">
+                    <span>✖️</span>
+                </button>
+            </div>
+
+            <div class="space-y-2">
+                <div class="text-xs font-mono text-lime-400 uppercase font-semibold">1. Аватары и скины бойца:</div>
+                <div id="armoryAvatarsGrid" class="grid grid-cols-4 gap-2"></div>
+            </div>
+
+            <div class="space-y-2 pt-2 border-t border-slate-800">
+                <div class="text-xs font-mono text-amber-400 uppercase font-semibold">2. Спецсредства:</div>
+                
+                <div class="bg-slate-950/80 p-2 rounded-xl border border-slate-800 flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-2xl">🎯</span>
+                        <div>
+                            <div class="font-military text-xs text-slate-200">50/50 Авиаудар</div>
+                            <div class="text-[9px] text-slate-400 font-mono">Минус 2 неверных</div>
+                        </div>
+                    </div>
+                    <button onclick="buyPerk('perk5050', 50)" class="btn-amber-glow px-2.5 py-1.5 rounded text-xs font-military">
+                        50 🪖
+                    </button>
+                </div>
+
+                <div class="bg-slate-950/80 p-2 rounded-xl border border-slate-800 flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-2xl">⏳</span>
+                        <div>
+                            <div class="font-military text-xs text-slate-200">Пауза (+10с)</div>
+                            <div class="text-[9px] text-slate-400 font-mono">Добавка к таймеру</div>
+                        </div>
+                    </div>
+                    <button onclick="buyPerk('perkTime', 30)" class="btn-amber-glow px-2.5 py-1.5 rounded text-xs font-military">
+                        30 🪖
+                    </button>
+                </div>
+
+                <div class="bg-slate-950/80 p-2 rounded-xl border border-slate-800 flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-2xl">❄️</span>
+                        <div>
+                            <div class="font-military text-xs text-slate-200">Заморозка серии</div>
+                            <div class="text-[9px] text-slate-400 font-mono">Спасает серию при пропуске дня</div>
+                        </div>
+                    </div>
+                    <button onclick="buyPerk('streakFreeze', 60)" class="btn-amber-glow px-2.5 py-1.5 rounded text-xs font-military">
+                        60 🪖
+                    </button>
+                </div>
+            </div>
+
+            <div class="pt-1">
+                <button onclick="closeModal('armoryModal')" class="btn-green-glow py-2.5 w-full rounded-lg font-military text-xs uppercase">ЗАКРЫТЬ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3: PURCHASE CONFIRMATION MODAL (ПОДТВЕРЖДЕНИЕ ПОКУПКИ) -->
+    <div id="buyConfirmModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="hud-card p-4 rounded-2xl max-w-xs w-full space-y-3 border-amber-500/70 text-center shadow-2xl">
+            <div class="space-y-1">
+                <div id="buyConfirmIcon" class="text-4xl animate-bounce">🥷</div>
+                <h3 class="font-military text-base text-amber-400 uppercase">ПОДТВЕРЖДЕНИЕ ПОКУПКИ</h3>
+                <p id="buyConfirmMessage" class="text-xs text-slate-200 font-mono leading-relaxed">
+                    Вы уверены, что хотите приобрести скин <span id="buyConfirmItemName" class="text-amber-300 font-bold">Спецназ</span> за <span id="buyConfirmPrice" class="text-amber-400 font-bold">80</span> жетонов?
+                </p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-2">
+                <button onclick="confirmPurchase()" class="btn-amber-glow py-2.5 rounded-xl font-military text-xs uppercase shadow-md">
+                    КУПИТЬ ✓
+                </button>
+                <button onclick="closeModal('buyConfirmModal')" class="py-2.5 rounded-xl bg-slate-900 border border-slate-700 font-military text-xs text-slate-300">
+                    ОТМЕНА
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 3B: PHOTO UPLOAD COST WARNING -->
+    <div id="photoConfirmModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="hud-card p-4 rounded-2xl max-w-xs w-full space-y-3 border-amber-500/70 text-center shadow-2xl">
+            <div class="space-y-1">
+                <div id="photoConfirmIcon" class="text-4xl">📷</div>
+                <h3 class="font-military text-base text-amber-400 uppercase">ЗАГРУЗКА ФОТО</h3>
+                <p id="photoConfirmMessage" class="text-xs text-slate-200 font-mono leading-relaxed">
+                    Первая загрузка фото — бесплатно!
+                </p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-2">
+                <button onclick="proceedPhotoUpload()" class="btn-amber-glow py-2.5 rounded-xl font-military text-xs uppercase shadow-md">
+                    ПРОДОЛЖИТЬ ✓
+                </button>
+                <button onclick="closeModal('photoConfirmModal')" class="py-2.5 rounded-xl bg-slate-900 border border-slate-700 font-military text-xs text-slate-300">
+                    ОТМЕНА
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 4: MUSIC & AUDIO PLAYER CONFIG -->
+    <div id="musicModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="hud-card p-5 rounded-2xl max-w-xs w-full space-y-4 border-lime-500/60">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <h3 class="font-military text-base text-lime-400 flex items-center space-x-2">
+                    <span class="text-sm">🎵</span>
+                    <span>МУЗЫКАЛЬНЫЙ ПЛЕЕР</span>
+                </h3>
+                <button onclick="closeModal('musicModal')" class="text-slate-400 text-base">
+                    <span>✖️</span>
+                </button>
+            </div>
+
+            <div class="space-y-3 font-mono text-xs">
+                <!-- Preset Default Music -->
+                <div class="space-y-1.5">
+                    <div class="text-slate-300 font-military text-xs">1. Стандартная музыка:</div>
+                    <button onclick="playPresetMusic()" id="btnPresetMusic" class="btn-green-glow w-full py-2 rounded-lg text-xs font-military uppercase flex items-center justify-center space-x-2">
+                        <span id="btnPresetMusicIcon" class="text-xs">▶️</span>
+                        <span id="btnPresetMusicLabel">Включить Военный Марш</span>
+                    </button>
+                </div>
+
+                <!-- Custom User Track Upload -->
+                <div class="space-y-1.5 pt-2 border-t border-slate-800">
+                    <div class="text-slate-300 font-military text-xs">2. Своя музыка:</div>
+                    <p class="text-[10px] text-slate-400">Каждый добавленный трек сохраняется в игре — второй раз искать файл не придётся.</p>
+
+                    <div id="savedMusicList" class="hidden space-y-1.5 max-h-40 overflow-y-auto pr-1"></div>
+
+                    <label class="cursor-pointer bg-slate-900 border border-lime-500/50 hover:border-lime-400 rounded-lg p-2.5 flex items-center justify-center space-x-2 text-lime-300 text-xs font-military active:scale-95 transition-all">
+                        <span class="text-xs">📤</span>
+                        <span id="customMusicLabel">Добавить аудиофайл (MP3/WAV/OGG)</span>
+                        <input type="file" id="musicFileInput" accept="audio/*" onchange="handleCustomMusicUpload(event)" class="hidden">
+                    </label>
+                </div>
+
+                <!-- Volume Slider -->
+                <div class="space-y-1 pt-2 border-t border-slate-800">
+                    <div class="flex justify-between text-xs">
+                        <span>Громкость музыки:</span>
+                        <span id="valVolMusic" class="text-lime-400">50%</span>
+                    </div>
+                    <input type="range" id="sliderVolMusic" min="0" max="100" value="50" oninput="updateMusicVolume(this.value)" class="w-full accent-lime-500 bg-slate-800 rounded">
+                </div>
+            </div>
+
+            <div class="pt-1">
+                <button onclick="closeModal('musicModal')" class="btn-green-glow py-2.5 w-full rounded-lg font-military text-xs uppercase">ГОТОВО</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 5: DAILY QUESTS & ACHIEVEMENTS -->
+    <div id="questsModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+        <div class="hud-card p-4 rounded-2xl max-w-sm w-full space-y-3 border-indigo-500/50 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <h3 class="font-military text-base text-indigo-400 flex items-center space-x-2">
+                    <span class="text-sm">📜</span>
+                    <span>ЗАДАНИЯ И НАГРАДЫ</span>
+                </h3>
+                <button onclick="closeModal('questsModal')" class="text-slate-400 text-base">
+                    <span>✖️</span>
+                </button>
+            </div>
+
+            <!-- Streak Strip -->
+            <div class="flex items-center justify-between bg-orange-950/40 border border-orange-500/40 rounded-lg px-2.5 py-1.5 text-xs font-mono">
+                <span class="flex items-center space-x-1.5 text-orange-300 font-military">
+                    <span>🔥</span>
+                    <span id="questsStreakText">Серия: 0 дней</span>
+                </span>
+                <span class="flex items-center space-x-2 shrink-0">
+                    <span id="questsStreakFreezeCount" class="text-sky-300 text-[10px]" title="Заморозки серии">❄️ 0</span>
+                    <span id="questsStreakBest" class="text-slate-400 text-[10px]">Рекорд: 0</span>
+                </span>
+            </div>
+
+            <!-- Daily Quests -->
+            <div class="space-y-1.5">
+                <div class="flex items-center justify-between text-[11px] font-mono text-indigo-300 uppercase tracking-wider">
+                    <span>📅 Ежедневные задания</span>
+                    <span id="dailyQuestsResetTimer" class="text-slate-500 normal-case lowercase text-[10px]"></span>
+                </div>
+                <div id="dailyQuestsContainer" class="space-y-2 font-mono text-xs"></div>
+            </div>
+
+            <!-- Permanent Achievements -->
+            <div class="space-y-1.5 pt-2 border-t border-slate-800">
+                <div class="text-[11px] font-mono text-amber-400 uppercase tracking-wider">🏅 Достижения</div>
+                <div id="questsContainer" class="space-y-2 font-mono text-xs"></div>
+            </div>
+
+            <div class="pt-1">
+                <button onclick="closeModal('questsModal')" class="btn-green-glow py-2.5 w-full rounded-lg font-military text-xs uppercase">ЗАКРЫТЬ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 5B: FRIENDS LEADERBOARD (РЕЙТИНГ ОТРЯДА) -->
+    <div id="friendsModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+        <div class="hud-card p-4 rounded-2xl max-w-sm w-full space-y-3 border-amber-500/50 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <h3 class="font-military text-base text-amber-400 flex items-center space-x-2">
+                    <span class="text-sm">🏆</span>
+                    <span>РЕЙТИНГ ОТРЯДА</span>
+                </h3>
+                <button onclick="closeModal('friendsModal')" class="text-slate-400 text-base">
+                    <span>✖️</span>
+                </button>
+            </div>
+
+            <div class="text-[9px] font-mono text-slate-500 bg-slate-950/60 border border-slate-800 rounded-lg px-2 py-1.5">
+                🔧 Пока это локальный список на этом устройстве — добавляй сослуживцев вручную и сравнивайте результаты. Автосинхронизация между телефонами появится позже.
+            </div>
+
+            <div id="friendsLeaderboardContainer" class="space-y-1.5 font-mono text-xs"></div>
+
+            <!-- Add Friend Form -->
+            <div class="pt-2 border-t border-slate-800 space-y-2">
+                <div class="text-[10px] font-mono text-amber-400 uppercase font-semibold">Добавить соперника:</div>
+                <div class="flex space-x-1.5">
+                    <input type="text" id="inputFriendName" maxlength="18" placeholder="Позывной" class="flex-grow min-w-0 bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs font-military text-slate-200 focus:outline-none focus:border-amber-400">
+                    <input type="number" id="inputFriendScore" min="0" placeholder="XP" class="w-16 shrink-0 bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs font-mono text-slate-200 focus:outline-none focus:border-amber-400">
+                </div>
+                <button onclick="addFriend()" class="btn-amber-glow py-2 w-full rounded-lg font-military text-[11px] uppercase">+ Добавить в отряд</button>
+            </div>
+
+            <div class="pt-1">
+                <button onclick="closeModal('friendsModal')" class="btn-green-glow py-2.5 w-full rounded-lg font-military text-xs uppercase">ЗАКРЫТЬ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 6: DEFUSAL MINI-GAME (С ШТРАФОМ -25 ЖЕТОНОВ ПРИ ОШИБКЕ) -->
+    <div id="defusalModal" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="hud-card p-5 rounded-2xl max-w-xs w-full space-y-4 border-red-500/60 text-center">
+            <div class="space-y-1">
+                <span class="text-3xl animate-bounce block">💣</span>
+                <h3 class="font-military text-lg text-red-400 uppercase">Обезвредить Бомбу!</h3>
+                <p class="text-[11px] text-slate-300 font-mono">
+                    Успех даст <span class="text-lime-400 font-bold">+50 Жетонов</span>.<br>
+                    <span class="text-red-400 font-bold">ОШИБКА: взрыв и потеря -25 жетонов!</span>
+                </p>
+            </div>
+
+            <div class="grid grid-cols-3 gap-3 pt-2">
+                <button onclick="chooseWire(0)" class="py-4 rounded-xl bg-red-600/80 border-2 border-red-400 font-military text-xs text-white active:scale-95 shadow-lg">КРАСНЫЙ</button>
+                <button onclick="chooseWire(1)" class="py-4 rounded-xl bg-blue-600/80 border-2 border-blue-400 font-military text-xs text-white active:scale-95 shadow-lg">СИНИЙ</button>
+                <button onclick="chooseWire(2)" class="py-4 rounded-xl bg-amber-600/80 border-2 border-amber-400 font-military text-xs text-white active:scale-95 shadow-lg">ЖЕЛТЫЙ</button>
+            </div>
+
+            <div class="pt-2">
+                <button onclick="closeModal('defusalModal')" class="py-2 px-4 rounded bg-slate-900 border border-slate-700 font-military text-xs text-slate-400">ОТМЕНА</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 6B: DAILY QUESTION (ВОПРОС ДНЯ) -->
+    <div id="dailyQuestionModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="hud-card p-4 rounded-2xl max-w-sm w-full space-y-3 border-amber-500/70">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <h3 class="font-military text-base text-amber-400 flex items-center space-x-2">
+                    <span class="text-sm">🎯</span>
+                    <span>ВОПРОС ДНЯ</span>
+                </h3>
+                <button onclick="closeModal('dailyQuestionModal')" class="text-slate-400 text-base">
+                    <span>✖️</span>
+                </button>
+            </div>
+
+            <div id="dailyQuestionBody" class="space-y-2.5 font-mono text-xs"></div>
+        </div>
+    </div>
+
+    <!-- MODAL 6C: DAILY CHEST -->
+    <div id="dailyChestModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+        <div class="hud-card p-5 rounded-2xl max-w-xs w-full space-y-3 border-amber-500/70 text-center">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2 text-left">
+                <h3 class="font-military text-base text-amber-400 flex items-center space-x-2">
+                    <span class="text-sm">🎁</span>
+                    <span>СУНДУК ДНЯ</span>
+                </h3>
+                <button onclick="closeModal('dailyChestModal')" class="text-slate-400 text-base">
+                    <span>✖️</span>
+                </button>
+            </div>
+            <div id="dailyChestBody" class="space-y-3 font-mono text-xs pt-1"></div>
+        </div>
+    </div>
+
+    <!-- MODAL 6E: CAMPAIGN "КУРСАНТ → СПЕЦИАЛИСТ" -->
+    <div id="campaignModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+        <div class="hud-card p-4 rounded-2xl max-w-sm w-full space-y-3 border-purple-500/50 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <h3 class="font-military text-base text-purple-300 flex items-center space-x-2">
+                    <span class="text-sm">🗺️</span>
+                    <span>КАМПАНИЯ</span>
+                </h3>
+                <button onclick="closeModal('campaignModal')" class="text-slate-400 text-base">
+                    <span>✖️</span>
+                </button>
+            </div>
+
+            <div class="text-[9px] font-mono text-slate-500 bg-slate-950/60 border border-slate-800 rounded-lg px-2 py-1.5">
+                🎯 Проходи этапы по порядку. Каждый следующий открывается после прохождения предыдущего с нужной точностью.
+            </div>
+
+            <div id="campaignStagesList" class="space-y-1.5 font-mono text-xs"></div>
+
+            <div class="pt-1">
+                <button onclick="closeModal('campaignModal')" class="btn-green-glow py-2.5 w-full rounded-lg font-military text-xs uppercase">ЗАКРЫТЬ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 6F: MEDALS ("МОИ НАГРАДЫ") -->
+    <div id="medalsModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+        <div class="hud-card p-4 rounded-2xl max-w-sm w-full space-y-3 border-amber-500/50 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <h3 class="font-military text-base text-amber-400 flex items-center space-x-2">
+                    <span class="text-sm">🏅</span>
+                    <span>МОИ НАГРАДЫ</span>
+                </h3>
+                <button onclick="closeModal('medalsModal')" class="text-slate-400 text-base">
+                    <span>✖️</span>
+                </button>
+            </div>
+
+            <div id="medalsList" class="space-y-1.5 font-mono text-xs"></div>
+
+            <div class="pt-1">
+                <button onclick="closeModal('medalsModal')" class="btn-green-glow py-2.5 w-full rounded-lg font-military text-xs uppercase">ЗАКРЫТЬ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 6E: CAMPAIGN STAGE STUDY (flashcard review, ungraded) -->
+    <div id="stageStudyModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+        <div class="hud-card p-4 rounded-2xl max-w-sm w-full space-y-3 border-lime-500/50 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <h3 class="font-military text-sm text-lime-400 flex items-center space-x-2">
+                    <span class="text-sm">📖</span>
+                    <span id="stageStudyTitle">ИЗУЧЕНИЕ</span>
+                </h3>
+                <button onclick="closeModal('stageStudyModal')" class="text-slate-400 text-base">
+                    <span>✖️</span>
+                </button>
+            </div>
+            <div id="stageStudyProgress" class="text-[10px] text-slate-500 font-mono text-center">1 / 10</div>
+            <div id="stageStudyBody" class="space-y-2.5 font-mono text-xs min-h-[120px]"></div>
+            <div class="flex items-center space-x-2 pt-1">
+                <button onclick="stageStudyNav(-1)" class="py-2.5 px-4 rounded-lg bg-slate-900 border border-slate-700 font-military text-xs text-slate-300">◀</button>
+                <button onclick="stageStudyNav(1)" class="btn-green-glow flex-1 py-2.5 rounded-lg font-military text-xs uppercase">ДАЛЕЕ ▶</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 6D: BACKGROUND CUSTOMIZATION -->
+    <div id="backgroundModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+        <div class="hud-card p-4 rounded-2xl max-w-sm w-full space-y-3 border-lime-500/50 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <h3 class="font-military text-base text-lime-400 flex items-center space-x-2">
+                    <span class="text-sm">🖼️</span>
+                    <span>ФОН ПРИЛОЖЕНИЯ</span>
+                </h3>
+                <button onclick="closeModal('backgroundModal')" class="text-slate-400 text-base">
+                    <span>✖️</span>
+                </button>
+            </div>
+
+            <div class="space-y-2 font-mono text-xs">
+                <div class="text-[10px] text-slate-400 uppercase font-semibold">Готовые темы:</div>
+                <div class="grid grid-cols-4 gap-2" id="bgPresetsGrid">
+                    <button onclick="setBackgroundPreset('default')" data-bg="default" class="bg-preset-btn p-2 rounded-lg border-2 border-lime-500 bg-slate-900/60 flex flex-col items-center space-y-1">
+                        <span class="w-full h-8 rounded block" style="background: linear-gradient(135deg, #142418, #040805);"></span>
+                        <span class="text-[9px] text-slate-300">Классика</span>
+                    </button>
+                    <button onclick="setBackgroundPreset('desert')" data-bg="desert" class="bg-preset-btn p-2 rounded-lg border border-slate-700 bg-slate-900/60 flex flex-col items-center space-y-1">
+                        <span class="w-full h-8 rounded block" style="background: linear-gradient(135deg, #5a3c14, #1a1408);"></span>
+                        <span class="text-[9px] text-slate-300">Пустыня</span>
+                    </button>
+                    <button onclick="setBackgroundPreset('night')" data-bg="night" class="bg-preset-btn p-2 rounded-lg border border-slate-700 bg-slate-900/60 flex flex-col items-center space-y-1">
+                        <span class="w-full h-8 rounded block" style="background: linear-gradient(135deg, #1e3a5f, #02050c);"></span>
+                        <span class="text-[9px] text-slate-300">Ночь</span>
+                    </button>
+                    <button onclick="setBackgroundPreset('jungle')" data-bg="jungle" class="bg-preset-btn p-2 rounded-lg border border-slate-700 bg-slate-900/60 flex flex-col items-center space-y-1">
+                        <span class="w-full h-8 rounded block" style="background: linear-gradient(135deg, #145028, #030d05);"></span>
+                        <span class="text-[9px] text-slate-300">Джунгли</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="space-y-1.5 pt-2 border-t border-slate-800">
+                <div class="text-[10px] text-slate-400 uppercase font-semibold">Своя картинка:</div>
+                <label class="cursor-pointer bg-slate-900 border border-lime-500/50 hover:border-lime-400 rounded-lg p-2.5 flex items-center justify-center space-x-2 text-lime-300 text-xs font-military active:scale-95 transition-all">
+                    <span class="text-xs">📤</span>
+                    <span>Загрузить фото (макс 20 МБ)</span>
+                    <input type="file" accept="image/*" onchange="handleBackgroundImageUpload(event)" class="hidden">
+                </label>
+                <p class="text-[9px] text-slate-500">Самая первая смена фона (фото или видео) — бесплатно, дальше фото — 80 🪖.</p>
+            </div>
+
+            <div class="space-y-1.5 pt-1">
+                <div class="text-[10px] text-slate-400 uppercase font-semibold">🎬 Живые обои (видео):</div>
+                <label class="cursor-pointer bg-slate-900 border border-purple-500/50 hover:border-purple-400 rounded-lg p-2.5 flex items-center justify-center space-x-2 text-purple-300 text-xs font-military active:scale-95 transition-all">
+                    <span class="text-xs">📤</span>
+                    <span>Загрузить видео (макс 100 МБ)</span>
+                    <input type="file" accept="video/*" onchange="handleBackgroundVideoUpload(event)" class="hidden">
+                </label>
+                <p class="text-[9px] text-slate-500">Самая первая смена фона (фото или видео) — бесплатно, дальше видео — 150 🪖. Ролик проигрывается по кругу со звуком, если он есть в файле. Берите файл покороче — большие видео не поместятся в памяти браузера.</p>
+            </div>
+
+            <div id="bgUploadMessage" class="text-[10px] font-mono min-h-[14px]"></div>
+
+            <div class="pt-1">
+                <button onclick="resetBackgroundToDefault()" class="w-full py-2 bg-slate-900/80 border border-slate-700 text-slate-300 font-military text-xs rounded">
+                    ВЕРНУТЬ СТАНДАРТНЫЙ ФОН
+                </button>
+            </div>
+
+            <div class="pt-1">
+                <button onclick="closeModal('backgroundModal')" class="btn-green-glow py-2.5 w-full rounded-lg font-military text-xs uppercase">ЗАКРЫТЬ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 7: SETTINGS -->
+    <div id="settingsModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="hud-card p-5 rounded-2xl max-w-xs w-full space-y-4 border-lime-500/50 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <h3 class="font-military text-base text-lime-400 flex items-center space-x-2">
+                    <span class="text-sm">🎚️</span>
+                    <span>НАСТРОЙКИ</span>
+                </h3>
+                <button onclick="closeModal('settingsModal')" class="text-slate-400 text-base">
+                    <span>✖️</span>
+                </button>
+            </div>
+
+            <div class="space-y-4 font-mono text-xs">
+                <div class="space-y-1">
+                    <div class="flex justify-between">
+                        <span>Громкость FX:</span>
+                        <span id="valVolFx" class="text-lime-400">80%</span>
+                    </div>
+                    <input type="range" id="sliderVolFx" min="0" max="100" value="80" oninput="updateSettings()" class="w-full accent-lime-500 bg-slate-800 rounded">
+                </div>
+
+                <div class="space-y-1 pt-1 border-t border-slate-800">
+                    <div class="flex justify-between">
+                        <span>Прозрачность интерфейса:</span>
+                        <span id="valUiOpacity" class="text-lime-400">100%</span>
+                    </div>
+                    <input type="range" id="sliderUiOpacity" min="30" max="100" value="100" oninput="updateUiOpacity(this.value)" class="w-full accent-lime-500 bg-slate-800 rounded">
+                    <p class="text-[9px] text-slate-500">Меньше — панели прозрачнее, лучше виден фон.</p>
+                </div>
+
+                <div class="space-y-1.5 pt-1 border-t border-slate-800">
+                    <span class="text-slate-400 uppercase text-[10px]">Длительность таймера вопроса:</span>
+                    <div class="grid grid-cols-3 gap-1.5" id="timerDurationGroup">
+                        <button onclick="setTimerDuration(15)" data-dur="15" class="timer-dur-btn py-1.5 rounded-lg border font-military text-[10px]">15с</button>
+                        <button onclick="setTimerDuration(20)" data-dur="20" class="timer-dur-btn py-1.5 rounded-lg border font-military text-[10px]">20с</button>
+                        <button onclick="setTimerDuration(30)" data-dur="30" class="timer-dur-btn py-1.5 rounded-lg border font-military text-[10px]">30с</button>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-1 border-t border-slate-800">
+                    <div>
+                        <div class="text-slate-200">Тряска экрана</div>
+                        <div class="text-[9px] text-slate-500">Эффекты при уроне и промахе</div>
+                    </div>
+                    <button onclick="toggleSetting('screenShake')" id="toggleScreenShake" class="toggle-switch"></button>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-slate-200">Вибрация</div>
+                        <div class="text-[9px] text-slate-500">Тактильный отклик (на телефоне)</div>
+                    </div>
+                    <button onclick="toggleSetting('haptic')" id="toggleHaptic" class="toggle-switch"></button>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-slate-200">Авто-переход</div>
+                        <div class="text-[9px] text-slate-500">Следующий вопрос без ожидания</div>
+                    </div>
+                    <button onclick="toggleSetting('autoAdvance')" id="toggleAutoAdvance" class="toggle-switch"></button>
+                </div>
+            </div>
+
+            <!-- Gift Code Redemption -->
+            <div class="space-y-1.5 pt-2 border-t border-slate-800">
+                <div class="text-[10px] font-mono text-amber-400 uppercase font-semibold">🎁 Код подарков:</div>
+                <div class="flex space-x-1.5">
+                    <input type="text" id="inputGiftCode" placeholder="ВВЕДИТЕ КОД" class="flex-grow min-w-0 bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs font-mono uppercase text-slate-200 focus:outline-none focus:border-amber-400">
+                    <button onclick="redeemGiftCode()" class="btn-amber-glow px-3 py-1.5 rounded-lg font-military text-[10px] uppercase shrink-0">ВВОД</button>
+                </div>
+                <div id="giftCodeMessage" class="text-[10px] font-mono min-h-[14px]"></div>
+            </div>
+
+            <div class="pt-1 border-t border-slate-800">
+                <button onclick="closeModal('settingsModal'); openModal('backgroundModal');" class="w-full py-2 mt-2 bg-slate-900/80 border border-lime-500/40 text-lime-300 font-military text-xs rounded">
+                    🖼️ ФОН ПРИЛОЖЕНИЯ
+                </button>
+                <button onclick="closeModal('settingsModal'); openInstructorPanel();" class="w-full py-2 mt-2 bg-slate-900/80 border border-slate-700 text-slate-300 font-military text-xs rounded">
+                    👨‍🏫 РЕЖИМ ИНСТРУКТОРА
+                </button>
+            </div>
+
+            <div class="pt-1 border-t border-slate-800 space-y-1.5 pt-2">
+                <div class="text-[10px] font-mono text-slate-400 uppercase font-semibold">💾 Резервная копия прогресса:</div>
+                <div class="grid grid-cols-2 gap-1.5">
+                    <button onclick="exportPlayerData()" class="py-2 bg-slate-900/80 border border-lime-500/40 text-lime-300 font-military text-[10px] rounded">
+                        ⬇️ СКАЧАТЬ
+                    </button>
+                    <button onclick="document.getElementById('inputImportFile').click()" class="py-2 bg-slate-900/80 border border-slate-700 text-slate-300 font-military text-[10px] rounded">
+                        ⬆️ ЗАГРУЗИТЬ
+                    </button>
+                </div>
+                <input type="file" id="inputImportFile" accept="application/json" class="hidden" onchange="importPlayerData(event)">
+                <p class="text-[9px] text-slate-500">Прогресс хранится только в этом браузере. Скачайте файл, чтобы не потерять ранг и медали при смене устройства.</p>
+            </div>
+
+            <div class="pt-1">
+                <button onclick="resetPlayerData()" class="w-full py-2 bg-red-950/80 border border-red-500/50 text-red-400 font-military text-xs rounded mb-2">
+                    СБРОСИТЬ ПРОГРЕСС
+                </button>
+                <button onclick="closeModal('settingsModal')" class="btn-green-glow py-2.5 w-full rounded-lg font-military text-xs uppercase">
+                    СОХРАНИТЬ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 8: SUBMIT YOUR OWN QUESTION -->
+    <div id="submitQuestionModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+        <div class="hud-card p-4 rounded-2xl max-w-sm w-full space-y-3 border-indigo-500/50 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <h3 class="font-military text-base text-indigo-400 flex items-center space-x-2">
+                    <span class="text-sm">✍️</span>
+                    <span>ПРЕДЛОЖИТЬ ВОПРОС</span>
+                </h3>
+                <button onclick="closeModal('submitQuestionModal')" class="text-slate-400 text-base">
+                    <span>✖️</span>
+                </button>
+            </div>
+
+            <div class="text-[9px] font-mono text-slate-500 bg-slate-950/60 border border-slate-800 rounded-lg px-2 py-1.5">
+                🔧 Заявка сохраняется только на этом устройстве. Чтобы вопрос попал в игру — скопируйте заявку и отправьте инструктору, он одобрит её на своей копии игры.
+            </div>
+
+            <div class="space-y-2 font-mono text-xs">
+                <div class="space-y-1">
+                    <label class="text-[10px] text-slate-400 uppercase">Дисциплина:</label>
+                    <select id="subqDiscipline" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-400">
+                        <option value="gear">Вооружение &amp; Экипировка</option>
+                        <option value="rhbz">РХБЗ</option>
+                        <option value="tactics">Тактика</option>
+                        <option value="btv">Бронетехника</option>
+                        <option value="fire">Огневая подготовка</option>
+                        <option value="svyaz">Связь</option>
+                        <option value="ustav">Уставы и звания</option>
+                        <option value="engineer">Инженерная подготовка</option>
+                    </select>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-[10px] text-slate-400 uppercase">Текст вопроса:</label>
+                    <textarea id="subqQuestion" maxlength="220" rows="2" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-400 resize-none" placeholder="Например: Какой калибр у..."></textarea>
+                </div>
+
+                <div class="space-y-1.5">
+                    <label class="text-[10px] text-slate-400 uppercase">Варианты ответа (отметьте верный):</label>
+                    <div class="space-y-1.5">
+                        <div class="flex items-center space-x-1.5">
+                            <input type="radio" name="subqCorrect" value="0" checked class="accent-indigo-500 shrink-0">
+                            <input type="text" id="subqOpt0" maxlength="80" class="flex-grow min-w-0 bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-400" placeholder="Вариант 1">
+                        </div>
+                        <div class="flex items-center space-x-1.5">
+                            <input type="radio" name="subqCorrect" value="1" class="accent-indigo-500 shrink-0">
+                            <input type="text" id="subqOpt1" maxlength="80" class="flex-grow min-w-0 bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-400" placeholder="Вариант 2">
+                        </div>
+                        <div class="flex items-center space-x-1.5">
+                            <input type="radio" name="subqCorrect" value="2" class="accent-indigo-500 shrink-0">
+                            <input type="text" id="subqOpt2" maxlength="80" class="flex-grow min-w-0 bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-400" placeholder="Вариант 3">
+                        </div>
+                        <div class="flex items-center space-x-1.5">
+                            <input type="radio" name="subqCorrect" value="3" class="accent-indigo-500 shrink-0">
+                            <input type="text" id="subqOpt3" maxlength="80" class="flex-grow min-w-0 bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-400" placeholder="Вариант 4">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-[10px] text-slate-400 uppercase">Пояснение (почему это верно):</label>
+                    <textarea id="subqExplanation" maxlength="240" rows="2" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-indigo-400 resize-none" placeholder="Короткое объяснение..."></textarea>
+                </div>
+
+                <button onclick="submitQuestion()" class="btn-amber-glow py-2.5 w-full rounded-lg font-military text-xs uppercase">ОТПРАВИТЬ ЗАЯВКУ</button>
+                <div id="subqMessage" class="text-[10px] font-mono min-h-[14px]"></div>
+            </div>
+
+            <div class="space-y-1.5 pt-2 border-t border-slate-800">
+                <div class="text-[10px] font-mono text-indigo-400 uppercase font-semibold">Мои заявки:</div>
+                <div id="mySubmissionsContainer" class="space-y-1.5 max-h-40 overflow-y-auto pr-1"></div>
+            </div>
+
+            <div class="pt-1">
+                <button onclick="closeModal('submitQuestionModal')" class="btn-green-glow py-2.5 w-full rounded-lg font-military text-xs uppercase">ЗАКРЫТЬ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 9: INSTRUCTOR REVIEW PANEL -->
+    <div id="instructorModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+        <div class="hud-card p-4 rounded-2xl max-w-sm w-full space-y-3 border-amber-500/50 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <h3 class="font-military text-base text-amber-400 flex items-center space-x-2">
+                    <span class="text-sm">👨‍🏫</span>
+                    <span>ПРОВЕРКА ЗАЯВОК</span>
+                </h3>
+                <button onclick="closeModal('instructorModal')" class="text-slate-400 text-base">
+                    <span>✖️</span>
+                </button>
+            </div>
+
+            <div class="text-[9px] font-mono text-slate-500 bg-slate-950/60 border border-slate-800 rounded-lg px-2 py-1.5">
+                🔧 Показаны только заявки этого устройства. Чтобы проверить заявку курсанта с другого телефона — попросите прислать текст (JSON) и вставьте его ниже.
+            </div>
+
+            <div class="space-y-1.5 pt-1">
+                <div class="text-[10px] font-mono text-amber-400 uppercase font-semibold">Импорт заявки от курсанта:</div>
+                <textarea id="importSubqText" rows="3" class="w-full bg-slate-900 border border-slate-700 rounded px-2 py-1.5 text-[10px] font-mono text-slate-200 focus:outline-none focus:border-amber-400 resize-none" placeholder="Вставьте сюда JSON, присланный курсантом..."></textarea>
+                <button onclick="importSubmission()" class="btn-amber-glow py-2 w-full rounded-lg font-military text-[11px] uppercase">ИМПОРТИРОВАТЬ</button>
+                <div id="importSubqMessage" class="text-[10px] font-mono min-h-[14px]"></div>
+            </div>
+
+            <div class="space-y-1.5 pt-2 border-t border-slate-800">
+                <div class="text-[10px] font-mono text-amber-400 uppercase font-semibold">На рассмотрении:</div>
+                <div id="instructorQueueContainer" class="space-y-2 font-mono text-xs"></div>
+            </div>
+
+            <div class="pt-1">
+                <button onclick="closeModal('instructorModal')" class="btn-green-glow py-2.5 w-full rounded-lg font-military text-xs uppercase">ЗАКРЫТЬ</button>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="js/questions.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(() => {});
+            });
+        }
+    </script>
+</body>
+</html>

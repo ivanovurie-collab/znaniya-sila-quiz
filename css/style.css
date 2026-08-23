@@ -1,0 +1,349 @@
+        :root {
+            --hud-lime: #84cc16;
+            --hud-amber: #f59e0b;
+            --hud-gold: #eab308;
+            --hud-dark: #050a07;
+            --hud-panel-alpha: 0.96;
+            --hud-panel-bg: rgba(9, 16, 12, var(--hud-panel-alpha));
+            --hud-grid-line: rgba(132, 204, 22, 0.08);
+            --camo-dark: #0a120c;
+            --camo-green: #142418;
+            --camo-brown: #1f1d13;
+        }
+
+        body {
+            font-family: 'Chakra Petch', 'Russo One', sans-serif;
+            background-color: var(--hud-dark);
+            color: #f1f5f9;
+            overflow-x: hidden;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .font-military { font-family: 'Russo One', sans-serif; }
+        .font-stencil { font-family: 'Allerta Stencil', sans-serif; }
+        .font-hud { font-family: 'Black Ops One', cursive; }
+
+        /* Military Camouflage Topography Background Pattern */
+        .military-bg {
+            background-color: #040805;
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(20, 36, 24, 0.8) 0%, transparent 40%),
+                radial-gradient(circle at 80% 80%, rgba(31, 29, 19, 0.8) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(10, 18, 12, 0.95) 0%, rgba(4, 8, 5, 0.99) 100%),
+                repeating-linear-gradient(45deg, rgba(132, 204, 22, 0.02) 0, rgba(132, 204, 22, 0.02) 2px, transparent 0, transparent 8px),
+                linear-gradient(var(--hud-grid-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--hud-grid-line) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 100% 100%, 16px 16px, 28px 28px, 28px 28px;
+            position: relative;
+        }
+
+        /* Alternate background themes — same grid/vignette structure as .military-bg, but with the
+           center vignette tinted (not near-black) so the palette reads clearly behind the UI cards,
+           not just at the screen edges. */
+        .military-bg-desert {
+            background-color: #2b1d0a;
+            background-image:
+                radial-gradient(circle at 20% 20%, rgba(200, 150, 40, 1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(160, 100, 20, 1) 0%, transparent 60%),
+                radial-gradient(circle at 50% 50%, rgba(80, 55, 18, 0.9) 0%, rgba(35, 22, 8, 0.97) 100%),
+                repeating-linear-gradient(45deg, rgba(250, 204, 21, 0.05) 0, rgba(250, 204, 21, 0.05) 2px, transparent 0, transparent 8px),
+                linear-gradient(rgba(250, 204, 21, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(250, 204, 21, 0.1) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 100% 100%, 16px 16px, 28px 28px, 28px 28px;
+            position: relative;
+        }
+        .military-bg-night {
+            background-color: #060d1f;
+            background-image:
+                radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(29, 78, 216, 1) 0%, transparent 60%),
+                radial-gradient(circle at 50% 50%, rgba(15, 30, 70, 0.9) 0%, rgba(8, 14, 30, 0.97) 100%),
+                repeating-linear-gradient(45deg, rgba(96, 165, 250, 0.05) 0, rgba(96, 165, 250, 0.05) 2px, transparent 0, transparent 8px),
+                linear-gradient(rgba(96, 165, 250, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(96, 165, 250, 0.1) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 100% 100%, 16px 16px, 28px 28px, 28px 28px;
+            position: relative;
+        }
+        .military-bg-jungle {
+            background-color: #062010;
+            background-image:
+                radial-gradient(circle at 20% 20%, rgba(21, 128, 61, 1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(6, 95, 45, 1) 0%, transparent 60%),
+                radial-gradient(circle at 50% 50%, rgba(12, 60, 28, 0.9) 0%, rgba(6, 24, 12, 0.97) 100%),
+                repeating-linear-gradient(45deg, rgba(74, 222, 128, 0.05) 0, rgba(74, 222, 128, 0.05) 2px, transparent 0, transparent 8px),
+                linear-gradient(rgba(74, 222, 128, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(74, 222, 128, 0.1) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 100% 100%, 16px 16px, 28px 28px, 28px 28px;
+            position: relative;
+        }
+
+        /* Topographic Lines Overlay */
+        .topo-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: 0.12;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3E%3Cpath d='M0,100 Q100,50 200,100 T400,100 M0,200 Q100,150 200,200 T400,200 M0,300 Q100,250 200,300 T400,300' fill='none' stroke='%2384cc16' stroke-width='1.5'/%3E%3Cpath d='M50,0 Q150,100 50,200 T50,400 M150,0 Q250,100 150,200 T150,400 M250,0 Q350,100 250,200 T250,400' fill='none' stroke='%23f59e0b' stroke-width='1'/%3E%3C/svg%3E");
+            background-size: 300px 300px;
+            z-index: 1;
+        }
+
+        /* Radar Pulse Animation */
+        .radar-sweep {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 600px;
+            height: 600px;
+            margin-top: -300px;
+            margin-left: -300px;
+            border-radius: 50%;
+            border: 1px solid rgba(132, 204, 22, 0.15);
+            background: conic-gradient(from 0deg at 50% 50%, rgba(132, 204, 22, 0.12) 0deg, transparent 60deg, transparent 360deg);
+            animation: radarRotate 12s linear infinite;
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        @keyframes radarRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .scanline-container {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 50;
+            overflow: hidden;
+        }
+
+        .scanline {
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(180deg, transparent, rgba(132, 204, 22, 0.25), transparent);
+            position: absolute;
+            animation: scan 7s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { top: -10px; }
+            100% { top: 100%; }
+        }
+
+        .hud-card {
+            background: var(--hud-panel-bg);
+            border: 1px solid rgba(132, 204, 22, 0.35);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.85), inset 0 0 15px rgba(132, 204, 22, 0.05);
+            position: relative;
+            border-radius: 1rem;
+        }
+
+        .hud-card::before, .hud-card::after {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-color: #84cc16;
+            pointer-events: none;
+        }
+        .hud-card::before { top: -1px; left: -1px; border-top: 2px solid; border-left: 2px solid; border-top-left-radius: 0.75rem; }
+        .hud-card::after { top: -1px; right: -1px; border-top: 2px solid; border-right: 2px solid; border-top-right-radius: 0.75rem; }
+
+        .btn-amber-glow {
+            background: linear-gradient(180deg, #f59e0b 0%, #d97706 100%);
+            box-shadow: 0 0 15px rgba(245, 158, 11, 0.35);
+            color: #090d0a;
+            font-weight: bold;
+            transition: transform 0.08s ease, filter 0.1s ease;
+        }
+        .btn-amber-glow:active { transform: scale(0.97); filter: brightness(1.1); }
+
+        .btn-green-glow {
+            background: linear-gradient(180deg, #65a30d 0%, #4d7c0f 100%);
+            box-shadow: 0 0 15px rgba(132, 204, 22, 0.35);
+            color: #ffffff;
+            transition: transform 0.08s ease, filter 0.1s ease;
+        }
+        .btn-green-glow:active { transform: scale(0.97); filter: brightness(1.15); }
+
+        .btn-purple-glow {
+            background: linear-gradient(180deg, #a855f7 0%, #7e22ce 100%);
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+            color: #ffffff;
+            transition: transform 0.08s ease, filter 0.1s ease;
+        }
+        .btn-purple-glow:active { transform: scale(0.97); filter: brightness(1.15); }
+
+        .btn-tactical-option {
+            background: rgba(14, 24, 18, 0.95);
+            border: 1px solid rgba(132, 204, 22, 0.3);
+            color: #f1f5f9;
+            transition: transform 0.08s ease, background-color 0.15s ease, border-color 0.15s ease;
+            min-height: 52px;
+        }
+        .btn-tactical-option:active {
+            transform: scale(0.98);
+            background: rgba(132, 204, 22, 0.2);
+            border-color: #84cc16;
+        }
+
+        .question-frame {
+            border: 1.5px solid #f59e0b;
+            background: rgba(12, 20, 15, 0.96);
+            box-shadow: 0 0 18px rgba(245, 158, 11, 0.25);
+            position: relative;
+        }
+
+        @keyframes comboPop {
+            0% { transform: scale(0.5); opacity: 0; }
+            50% { transform: scale(1.25); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-combo { animation: comboPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+        @keyframes floatUpFade {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-45px) scale(1.2); }
+        }
+        .floating-text {
+            position: fixed;
+            pointer-events: none;
+            z-index: 100;
+            font-family: 'Russo One', sans-serif;
+            animation: floatUpFade 1.1s forwards ease-out;
+            text-shadow: 0 0 10px rgba(0,0,0,0.95);
+        }
+
+        @keyframes screenFlashRed {
+            0% { background-color: rgba(239, 68, 68, 0.4); }
+            100% { background-color: transparent; }
+        }
+        .flash-red { animation: screenFlashRed 0.45s ease-out; }
+
+        /* --- Screen Deploy Transition (tactical HUD boot-in) --- */
+        @keyframes screenDeploy {
+            0% { opacity: 0; transform: translateY(14px) scale(0.985); filter: blur(2px); }
+            60% { opacity: 1; filter: blur(0); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .screen-deploy { animation: screenDeploy 0.38s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+        /* --- Question / options staggered rollout --- */
+        @keyframes unitRollIn {
+            0% { opacity: 0; transform: translateX(-10px); }
+            100% { opacity: 1; transform: translateX(0); }
+        }
+        .unit-roll-in { animation: unitRollIn 0.3s ease-out both; }
+
+        /* --- Answer button locking-in feedback (radial fill + snap) --- */
+        .btn-tactical-option {
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-tactical-option .fill-sweep {
+            position: absolute;
+            inset: 0;
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.32s cubic-bezier(0.65, 0, 0.35, 1);
+            z-index: 0;
+            pointer-events: none;
+        }
+        .btn-tactical-option.locked-correct .fill-sweep { transform: scaleX(1); background: rgba(132, 204, 22, 0.28); }
+        .btn-tactical-option.locked-wrong .fill-sweep { transform: scaleX(1); background: rgba(239, 68, 68, 0.28); }
+        .btn-tactical-option > * { position: relative; z-index: 1; }
+        .btn-tactical-option.locked-correct { border-color: #84cc16 !important; animation: lockSnap 0.28s ease-out; }
+        .btn-tactical-option.locked-wrong { border-color: #ef4444 !important; animation: lockShake 0.35s ease-out; }
+
+        @keyframes lockSnap {
+            0% { transform: scale(1); }
+            40% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        @keyframes lockShake {
+            0%, 100% { transform: translateX(0); }
+            20% { transform: translateX(-4px); }
+            40% { transform: translateX(4px); }
+            60% { transform: translateX(-3px); }
+            80% { transform: translateX(3px); }
+        }
+
+        /* --- Timer critical state: low time warning pulse --- */
+        @keyframes timerCritical {
+            0%, 100% { transform: scale(1); text-shadow: 0 0 8px rgba(239, 68, 68, 0.5); }
+            50% { transform: scale(1.18); text-shadow: 0 0 18px rgba(239, 68, 68, 0.95); }
+        }
+        .timer-critical { color: #ef4444 !important; animation: timerCritical 1s ease-in-out infinite; }
+
+        /* --- Boss impact: screen shake on hit --- */
+        @keyframes bossImpactShake {
+            0%, 100% { transform: translate(0, 0); }
+            10% { transform: translate(-6px, 3px); }
+            20% { transform: translate(5px, -4px); }
+            30% { transform: translate(-5px, 2px); }
+            40% { transform: translate(6px, -2px); }
+            50% { transform: translate(-3px, 3px); }
+            60% { transform: translate(3px, -2px); }
+            70% { transform: translate(-2px, 1px); }
+            80% { transform: translate(2px, -1px); }
+            90% { transform: translate(-1px, 1px); }
+        }
+        .boss-impact-shake { animation: bossImpactShake 0.4s ease-out; }
+
+        /* --- Settings Toggle Switch --- */
+        .toggle-switch {
+            width: 38px;
+            height: 21px;
+            border-radius: 999px;
+            background: #1e293b;
+            border: 1px solid #334155;
+            position: relative;
+            flex-shrink: 0;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+        }
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 1px;
+            left: 1px;
+            width: 17px;
+            height: 17px;
+            border-radius: 50%;
+            background: #64748b;
+            transition: transform 0.2s ease, background-color 0.2s;
+        }
+        .toggle-switch.on {
+            background: rgba(132, 204, 22, 0.25);
+            border-color: #84cc16;
+        }
+        .toggle-switch.on::after {
+            transform: translateX(17px);
+            background: #84cc16;
+            box-shadow: 0 0 6px rgba(132, 204, 22, 0.7);
+        }
+
+        @keyframes bossFlashPurple {
+            0% { background-color: rgba(168, 85, 247, 0.35); }
+            100% { background-color: transparent; }
+        }
+        .flash-purple { animation: bossFlashPurple 0.4s ease-out; }
+
+        .phone-container {
+            max-width: 490px;
+            width: 100%;
+            margin: 0 auto;
+            min-height: 100vh;
+            min-height: -webkit-fill-available;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #060c08; }
+        ::-webkit-scrollbar-thumb { background: #365314; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #84cc16; }
