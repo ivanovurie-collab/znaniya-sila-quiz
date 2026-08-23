@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v4';
+const CACHE_VERSION = 'v5';
 const CACHE_NAME = `znaniya-sila-${CACHE_VERSION}`;
 
 const APP_SHELL = [
@@ -19,7 +19,13 @@ const APP_SHELL = [
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
-            .then((cache) => cache.addAll(APP_SHELL))
+            .then((cache) => Promise.all(
+                // 'reload' bypasses the browser's own HTTP cache — without it, a fresh service
+                // worker can still pack in a stale file GitHub Pages told the browser to cache,
+                // producing a version mismatch between app shell files (e.g. new index.html with
+                // old app.js) that looks like nothing updated at all.
+                APP_SHELL.map((url) => fetch(url, { cache: 'reload' }).then((response) => cache.put(url, response)))
+            ))
             .then(() => self.skipWaiting())
     );
 });
@@ -45,7 +51,7 @@ self.addEventListener('fetch', (event) => {
         // App shell: cache-first, falling back to network, updating the cache in the background.
         event.respondWith(
             caches.match(request).then((cached) => {
-                const network = fetch(request).then((response) => {
+                const network = fetch(request, { cache: 'no-cache' }).then((response) => {
                     if (response.ok) {
                         const copy = response.clone();
                         caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
