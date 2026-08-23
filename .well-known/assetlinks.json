@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.ivanovurie_collab.twa",
+        "sha256_cert_fingerprints": ["15:9F:4F:EE:2A:10:EB:2F:9F:05:71:B9:38:8B:33:1C:54:7F:7D:CA:7E:E3:7C:FA:B9:DE:C7:74:FA:D9:7E:FA"]
+      }
+    }]
