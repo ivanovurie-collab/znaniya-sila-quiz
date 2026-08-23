@@ -151,11 +151,15 @@
                         </div>
                     </div>
 
-                    <!-- Primary Action -->
-                    <div class="pt-1">
-                        <button onclick="showScreen('screenSetup')" class="btn-amber-glow w-full py-3.5 rounded-xl text-base font-military tracking-wider uppercase flex items-center justify-center space-x-2 cursor-pointer shadow-lg">
-                            <span class="text-slate-950 text-sm">▶️</span>
-                            <span>БОЕВАЯ СИМУЛЯЦИЯ</span>
+                    <!-- Smart Primary Action — decides what the player should do next (see continuePreparation) -->
+                    <div class="pt-1 space-y-1.5">
+                        <div class="bg-slate-950/80 border border-lime-500/30 rounded-lg px-3 py-1.5">
+                            <div id="smartCtaLabel" class="text-[9px] font-mono text-slate-500 uppercase">ТЕКУЩАЯ ЗАДАЧА</div>
+                            <div id="smartCtaSub" class="font-military text-xs text-lime-300">—</div>
+                        </div>
+                        <button onclick="continuePreparation()" class="btn-amber-glow w-full py-3.5 rounded-xl text-base font-military tracking-wider uppercase flex items-center justify-center space-x-2 cursor-pointer shadow-lg">
+                            <span id="btnContinuePrepIcon" class="text-slate-950 text-sm">▶️</span>
+                            <span id="btnContinuePrepLabel">ПРОДОЛЖИТЬ ПОДГОТОВКУ</span>
                         </button>
                     </div>
 
@@ -167,6 +171,11 @@
                     </div>
 
                     <div id="menuTabPlay" class="grid grid-cols-1 gap-2">
+                        <button onclick="showScreen('screenSetup')" class="w-full py-2.5 rounded-xl text-xs font-military tracking-wider uppercase flex items-center justify-center space-x-2 cursor-pointer bg-slate-900/90 border border-amber-500/50 text-amber-300 active:scale-95 transition-all">
+                            <span class="text-sm">▶️</span>
+                            <span>БОЕВАЯ СИМУЛЯЦИЯ</span>
+                        </button>
+
                         <button onclick="openCampaignModal()" class="w-full py-2.5 rounded-xl text-xs font-military tracking-wider uppercase flex items-center justify-center space-x-2 cursor-pointer bg-slate-900/90 border-2 border-purple-500/60 text-purple-300 active:scale-95 transition-all">
                             <span class="text-sm">🗺️</span>
                             <span>КАМПАНИЯ: КУРСАНТ → СПЕЦИАЛИСТ</span>
@@ -220,6 +229,11 @@
                         <button onclick="openReferenceModal()" class="w-full py-2.5 rounded-xl text-xs font-military tracking-wider uppercase flex items-center justify-center space-x-2 cursor-pointer bg-slate-900/90 border border-cyan-500/50 text-cyan-300 active:scale-95 transition-all">
                             <span class="text-xs">📚</span>
                             <span>СПРАВОЧНИК</span>
+                        </button>
+
+                        <button onclick="openExamTicketsModal()" class="w-full py-2.5 rounded-xl text-xs font-military tracking-wider uppercase flex items-center justify-center space-x-2 cursor-pointer bg-slate-900/90 border border-emerald-500/50 text-emerald-300 active:scale-95 transition-all">
+                            <span class="text-xs">🗒️</span>
+                            <span>БИЛЕТЫ ЭКЗАМЕНА</span>
                         </button>
                     </div>
 
@@ -1006,6 +1020,27 @@
                 <span>🎓</span>
                 <span>НАЧАТЬ ТРЕНИРОВКУ</span>
             </button>
+        </div>
+    </div>
+
+    <!-- MODAL 5E: EXAM TICKETS (БИЛЕТЫ ЭКЗАМЕНА) — fixed discipline sets drawn from the existing bank -->
+    <div id="examTicketsModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+        <div class="hud-card p-4 rounded-2xl max-w-sm w-full space-y-3 border-emerald-500/50 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <h3 class="font-military text-base text-emerald-300 flex items-center space-x-2">
+                    <span class="text-sm">🗒️</span>
+                    <span>БИЛЕТЫ ЭКЗАМЕНА</span>
+                </h3>
+                <button onclick="closeModal('examTicketsModal')" class="text-slate-400 text-base">
+                    <span>✖️</span>
+                </button>
+            </div>
+
+            <div class="text-[9px] font-mono text-slate-500 bg-slate-950/60 border border-slate-800 rounded-lg px-2 py-1.5">
+                Каждый билет — заранее заданный набор из 5 дисциплин, по 2 вопроса из каждой (10 вопросов, с таймером).
+            </div>
+
+            <div id="examTicketsList" class="space-y-2"></div>
         </div>
     </div>
 

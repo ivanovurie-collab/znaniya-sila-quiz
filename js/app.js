@@ -1,7 +1,7 @@
         // --- APP VERSION ---
         // Single source of truth for the version shown in the tab title and the main-menu badge —
         // bump this on every real content/feature change instead of editing those strings by hand.
-        const APP_VERSION = '5.3';
+        const APP_VERSION = '5.4';
 
         // --- GAME PERSISTENT STATE ---
         let playerData = {
@@ -231,6 +231,77 @@
             { id: 'exam', title: 'ЭКЗАМЕН НА КВАЛИФИКАЦИЮ', icon: '🎖️', discipline: 'all', difficulty: 'all', requiredAccuracy: 80, questionCount: 15, rewardTokens: 150, rewardXp: 120, isFinal: true }
         ];
         const CAMPAIGN_QUALIFICATION_AVATAR = '🏵️';
+
+        const DISCIPLINE_ICONS = {
+            gear: '🪖', rhbz: '🛡️', tactics: '⚔️', btv: '🚜',
+            fire: '🎯', svyaz: '📡', ustav: '📘', engineer: '🔧'
+        };
+
+        // --- EXAM TICKETS (БИЛЕТЫ ЭКЗАМЕНА) ---
+        // Each ticket is a fixed, pre-defined set of 5 disciplines (not random) — questions are drawn
+        // live from ALL_QUESTIONS, no separate ticket-specific question bank needed.
+        const EXAM_TICKETS = [
+            { id: 1, disciplines: ['gear', 'tactics', 'btv', 'rhbz', 'svyaz'] },
+            { id: 2, disciplines: ['fire', 'ustav', 'engineer', 'tactics', 'rhbz'] },
+            { id: 3, disciplines: ['gear', 'svyaz', 'ustav', 'btv', 'fire'] },
+            { id: 4, disciplines: ['rhbz', 'engineer', 'tactics', 'svyaz', 'gear'] },
+            { id: 5, disciplines: ['btv', 'fire', 'ustav', 'engineer', 'tactics'] }
+        ];
+        const EXAM_TICKET_QUESTIONS_PER_DISCIPLINE = 2;
+
+        function buildExamTicketPool(ticket) {
+            const usedIds = new Set();
+            const result = [];
+            ticket.disciplines.forEach(cat => {
+                let pool = ALL_QUESTIONS.filter(q => q.category === cat && !usedIds.has(q.id));
+                pool.sort(() => Math.random() - 0.5);
+                const picked = pool.slice(0, EXAM_TICKET_QUESTIONS_PER_DISCIPLINE);
+                picked.forEach(q => usedIds.add(q.id));
+                result.push(...picked);
+            });
+            return result;
+        }
+
+        function openExamTicketsModal() {
+            const list = document.getElementById('examTicketsList');
+            if (list) {
+                list.innerHTML = EXAM_TICKETS.map(ticket => `
+                    <button onclick="startExamTicket(${ticket.id})" class="w-full text-left p-2.5 rounded-lg bg-slate-900/80 border border-slate-800 active:scale-95 transition-all space-y-1">
+                        <div class="font-military text-xs text-emerald-300 uppercase">БИЛЕТ №${ticket.id}</div>
+                        <div class="text-[10px] font-mono text-slate-400">${ticket.disciplines.map(c => `${DISCIPLINE_ICONS[c] || ''} ${DISCIPLINE_LABELS[c] || c}`).join(' · ')}</div>
+                    </button>
+                `).join('');
+            }
+            openModal('examTicketsModal');
+            playSound('click');
+        }
+
+        function startExamTicket(ticketId) {
+            const ticket = EXAM_TICKETS.find(t => t.id === ticketId);
+            if (!ticket) return;
+            closeModal('examTicketsModal');
+            playSound('click');
+
+            practiceMode = null;
+            activeCampaignStageIndex = null;
+            battleDisciplineBreakdown = {};
+            battleTopicBreakdown = {};
+            gameMode = 'solo';
+            currentQuestions = buildExamTicketPool(ticket);
+
+            currentQIndex = 0;
+            score = 0;
+            scoreP2 = 0;
+            comboStreak = 0;
+            maxCombo = 0;
+            correctCount = 0;
+            bossHp = 100;
+
+            playerData.stats.totalGames = (playerData.stats.totalGames || 0) + 1;
+            savePlayerData();
+
+            showQuestionScreen();
+        }
 
         let activeCampaignStageIndex = null;
 
@@ -834,6 +905,7 @@
             updateDailyChestButtonUI();
             updateReviewButtonUI();
             renderWeakSpotCallout();
+            renderSmartCta();
 
             const rankInfo = getPlayerRankInfo();
             document.getElementById('mainRankDisplay').innerText = `РАНГ: ${rankInfo.icon} ${rankInfo.title}`;
@@ -2346,6 +2418,74 @@
             const box = document.getElementById('weakSpotCallout');
             if (!box || !box.dataset.cat || !box.dataset.topic) return;
             startWeakSpotRecovery(box.dataset.cat, box.dataset.topic);
+        }
+
+        function pluralQuestions(n) {
+            const abs = Math.abs(n) % 100;
+            const last = abs % 10;
+            if (abs > 10 && abs < 20) return 'вопросов';
+            if (last === 1) return 'вопрос';
+            if (last >= 2 && last <= 4) return 'вопроса';
+            return 'вопросов';
+        }
+
+        // --- SMART HOME SCREEN CTA ("ПРОДОЛЖИТЬ ПОДГОТОВКУ") ---
+        // Decides the single most useful next action, in priority order: overdue SRS review, a
+        // critical weak topic, the next open campaign stage, or a default free-choice battle.
+        function getSmartNextAction() {
+            const due = getDueMissedQuestions();
+            if (due.length > 0) {
+                return {
+                    type: 'review', icon: '🧠',
+                    label: 'ПОВТОРИТЬ ОШИБКИ',
+                    sub: `Доступно ${due.length} ${pluralQuestions(due.length)} на повторение`
+                };
+            }
+
+            const weak = getWeakestDiscipline();
+            const weakTopic = weak ? getWeakestTopicIn(weak.cat, 3, 60) : null;
+            if (weak && weakTopic) {
+                return {
+                    type: 'recovery', icon: '⚠️',
+                    label: 'НАЧАТЬ ВОССТАНОВЛЕНИЕ',
+                    sub: `${weak.label} → ${weakTopic.topic} — ${Math.round(weakTopic.pct)}%`,
+                    cat: weak.cat, topic: weakTopic.topic
+                };
+            }
+
+            const campaign = playerData.campaign || { unlockedStageIndex: 0, qualificationEarned: false };
+            if (!campaign.qualificationEarned && campaign.unlockedStageIndex < CAMPAIGN_STAGES.length) {
+                const stage = CAMPAIGN_STAGES[campaign.unlockedStageIndex];
+                return {
+                    type: 'campaign', icon: '🗺️',
+                    label: 'ПРОДОЛЖИТЬ КАМПАНИЮ',
+                    sub: `Следующий этап: «${stage.title}»`,
+                    stageIndex: campaign.unlockedStageIndex
+                };
+            }
+
+            return {
+                type: 'default', icon: '▶️',
+                label: 'БОЕВАЯ СИМУЛЯЦИЯ',
+                sub: 'Обычная тренировка'
+            };
+        }
+
+        function renderSmartCta() {
+            const sub = document.getElementById('smartCtaSub');
+            const icon = document.getElementById('btnContinuePrepIcon');
+            if (!sub || !icon) return;
+            const action = getSmartNextAction();
+            sub.innerText = action.sub;
+            icon.innerText = action.icon;
+        }
+
+        function continuePreparation() {
+            const action = getSmartNextAction();
+            if (action.type === 'review') startReviewQuiz();
+            else if (action.type === 'recovery') startWeakSpotRecovery(action.cat, action.topic);
+            else if (action.type === 'campaign') startCampaignStage(action.stageIndex);
+            else showScreen('screenSetup');
         }
 
         // Set right after an answer (see handleAnswer) so "ИЗУЧИТЬ ТЕМУ" knows which topic to open.
