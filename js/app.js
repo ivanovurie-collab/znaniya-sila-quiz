@@ -73,6 +73,9 @@
             // Per-discipline accuracy, e.g. { rhbz: { correct: 12, total: 15 }, ... } — every answered
             // question counts, in any mode, so it reflects genuine competency, not just battle results.
             disciplineStats: {},
+            // Per-discipline, per-topic accuracy, e.g. { tactics: { 'Наступление': { correct: 4, total: 5 } } }.
+            // Mirrors disciplineStats but one level deeper, for the topic breakdown in the profile.
+            topicStats: {},
             // unlockedStageIndex: highest CAMPAIGN_STAGES index the player may currently play.
             // completedStages: { stageId: { bestAccuracy } } — first clear grants the stage reward once.
             campaign: { unlockedStageIndex: 0, completedStages: {}, qualificationEarned: false },
@@ -730,6 +733,9 @@
                     }
                     if (!playerData.disciplineStats || typeof playerData.disciplineStats !== 'object') {
                         playerData.disciplineStats = {};
+                    }
+                    if (!playerData.topicStats || typeof playerData.topicStats !== 'object') {
+                        playerData.topicStats = {};
                     }
                     if (!playerData.campaign || typeof playerData.campaign !== 'object') {
                         playerData.campaign = { unlockedStageIndex: 0, completedStages: {}, qualificationEarned: false };
@@ -1782,11 +1788,18 @@
         let practiceMode = null;
 
         // --- PER-DISCIPLINE ACCURACY (drives the profile breakdown and the "weak discipline" hint) ---
-        function recordDisciplineStat(category, isCorrect) {
+        function recordDisciplineStat(category, isCorrect, topic) {
             if (!playerData.disciplineStats) playerData.disciplineStats = {};
             if (!playerData.disciplineStats[category]) playerData.disciplineStats[category] = { correct: 0, total: 0 };
             playerData.disciplineStats[category].total++;
             if (isCorrect) playerData.disciplineStats[category].correct++;
+
+            if (!topic) return;
+            if (!playerData.topicStats) playerData.topicStats = {};
+            if (!playerData.topicStats[category]) playerData.topicStats[category] = {};
+            if (!playerData.topicStats[category][topic]) playerData.topicStats[category][topic] = { correct: 0, total: 0 };
+            playerData.topicStats[category][topic].total++;
+            if (isCorrect) playerData.topicStats[category][topic].correct++;
         }
 
         // --- SPACED REPETITION (mini-SRS) for missed questions ---
@@ -2070,17 +2083,40 @@
             return (rows.length > 0 && rows[0].pct < threshold) ? rows[0] : null;
         }
 
+        // Finer-grained 4-band colour used inside the topic breakdown (the discipline bar above it
+        // keeps its own 3-band scheme so its look doesn't change for players who never expand it).
+        function topicAccuracyColor(pct) {
+            return pct >= 80 ? '#84cc16' : pct >= 65 ? '#eab308' : pct >= 50 ? '#f97316' : '#ef4444';
+        }
+        function topicAccuracyDot(pct) {
+            return pct >= 80 ? '🟢' : pct >= 65 ? '🟡' : pct >= 50 ? '🟠' : '🔴';
+        }
+
+        // Which discipline rows currently have their topic list expanded — UI-only, not persisted.
+        const expandedDisciplineTopics = new Set();
+
+        function toggleDisciplineTopics(cat) {
+            if (expandedDisciplineTopics.has(cat)) expandedDisciplineTopics.delete(cat);
+            else expandedDisciplineTopics.add(cat);
+            renderDisciplineStats();
+        }
+
         function renderDisciplineStats() {
             const box = document.getElementById('disciplineStatsBox');
             const hintBox = document.getElementById('weakDisciplineHint');
             if (!box) return;
 
             const stats = playerData.disciplineStats || {};
+            const topicStats = playerData.topicStats || {};
             const rows = Object.keys(DISCIPLINE_LABELS).map(cat => {
                 const s = stats[cat];
                 const total = s ? s.total : 0;
                 const pct = total > 0 ? Math.round((s.correct / total) * 100) : null;
-                return { cat, label: DISCIPLINE_LABELS[cat], pct, total };
+                const topics = Object.keys(topicStats[cat] || {}).map(topic => {
+                    const t = topicStats[cat][topic];
+                    return { topic, total: t.total, pct: Math.round((t.correct / t.total) * 100) };
+                }).sort((a, b) => b.total - a.total);
+                return { cat, label: DISCIPLINE_LABELS[cat], pct, total, topics };
             }).filter(r => r.total > 0);
 
             if (rows.length === 0) {
@@ -2093,16 +2129,27 @@
             rows.forEach(r => {
                 const isWeak = r.pct < 70 && r.total >= 5;
                 const color = r.pct >= 85 ? '#84cc16' : r.pct >= 70 ? '#eab308' : '#ef4444';
+                const hasTopics = r.topics.length > 0;
+                const isExpanded = expandedDisciplineTopics.has(r.cat);
                 const row = document.createElement('div');
                 row.className = 'space-y-0.5';
+
+                const topicRowsHtml = r.topics.map(t => `
+                    <div class="flex justify-between text-[9px] font-mono pl-3">
+                        <span class="text-slate-400">└ ${t.topic}</span>
+                        <span style="color:${topicAccuracyColor(t.pct)}">${t.pct}% ${topicAccuracyDot(t.pct)}</span>
+                    </div>
+                `).join('');
+
                 row.innerHTML = `
-                    <div class="flex justify-between text-[10px] font-mono">
-                        <span class="text-slate-300">${r.label}${isWeak ? ' ⚠️' : ''}</span>
+                    <div class="flex justify-between text-[10px] font-mono ${hasTopics ? 'cursor-pointer' : ''}" ${hasTopics ? `onclick="toggleDisciplineTopics('${r.cat}')"` : ''}>
+                        <span class="text-slate-300">${hasTopics ? (isExpanded ? '▾ ' : '▸ ') : ''}${r.label}${isWeak ? ' ⚠️' : ''}</span>
                         <span style="color:${color}" class="font-bold">${r.pct}%</span>
                     </div>
                     <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
                         <div style="width:${r.pct}%; background:${color};" class="h-full transition-all"></div>
                     </div>
+                    ${isExpanded ? `<div class="space-y-0.5 pt-0.5">${topicRowsHtml}</div>` : ''}
                 `;
                 box.appendChild(row);
             });
@@ -2561,7 +2608,7 @@
             const selectedOriginalIdx = currentOptionOrder[selectedIndex];
             const correctDisplayIdx = currentOptionOrder.indexOf(q.correct);
             const isCorrect = selectedOriginalIdx === q.correct;
-            recordDisciplineStat(q.category, isCorrect);
+            recordDisciplineStat(q.category, isCorrect, q.topic);
             if (!battleDisciplineBreakdown[q.category]) battleDisciplineBreakdown[q.category] = { correct: 0, total: 0 };
             battleDisciplineBreakdown[q.category].total++;
             if (isCorrect) battleDisciplineBreakdown[q.category].correct++;
