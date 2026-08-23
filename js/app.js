@@ -1,3 +1,8 @@
+        // --- APP VERSION ---
+        // Single source of truth for the version shown in the tab title and the main-menu badge —
+        // bump this on every real content/feature change instead of editing those strings by hand.
+        const APP_VERSION = '4.9';
+
         // --- GAME PERSISTENT STATE ---
         let playerData = {
             callsign: 'Курсант Иванов',
@@ -3887,6 +3892,10 @@
         }
 
         // --- INIT ---
+        document.title = `Знания — Сила: Курсантский Квиз v${APP_VERSION} (Tactical Profile & Audio)`;
+        const versionBadgeEl = document.getElementById('appVersionBadge');
+        if (versionBadgeEl) versionBadgeEl.innerText = `ТАКТИЧЕСКИЙ СИМУЛЯТОР V${APP_VERSION}`;
+
         window.addEventListener('load', () => { loadPlayerData(); });
         window.addEventListener('touchstart', () => { initAudio(); }, { once: true });
         window.addEventListener('click', () => {
