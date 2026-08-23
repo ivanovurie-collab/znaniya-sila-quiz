@@ -1,7 +1,7 @@
         // --- APP VERSION ---
         // Single source of truth for the version shown in the tab title and the main-menu badge —
         // bump this on every real content/feature change instead of editing those strings by hand.
-        const APP_VERSION = '5.2';
+        const APP_VERSION = '5.3';
 
         // --- GAME PERSISTENT STATE ---
         let playerData = {
@@ -147,6 +147,11 @@
         let gameMode = 'solo';
         let selectedDiscipline = 'all';
         let selectedDifficulty = 'all';
+        // --- Custom training config (see customTrainingModal / startStudyQuiz) ---
+        let selectedTopic = 'all';
+        let selectedQuestionCount = 10;
+        let studyTimerEnabled = false;
+        let studyExplanationsEnabled = true;
         let currentQuestions = [];
         let currentQIndex = 0;
         // Maps displayed answer position -> original index in q.options, reshuffled per question
@@ -828,6 +833,7 @@
             updateDailyQuestionButtonUI();
             updateDailyChestButtonUI();
             updateReviewButtonUI();
+            renderWeakSpotCallout();
 
             const rankInfo = getPlayerRankInfo();
             document.getElementById('mainRankDisplay').innerText = `РАНГ: ${rankInfo.icon} ${rankInfo.title}`;
@@ -1889,16 +1895,23 @@
             showQuestionScreen();
         }
 
-        // Untimed practice through the currently selected discipline/difficulty — no rewards,
-        // no effect on quests or streak, purely for learning. Entered via the Setup screen.
+        // Untimed practice through the currently selected discipline/topic/difficulty — no rewards,
+        // no effect on quests or streak, purely for learning. Entered via customTrainingModal (or
+        // the weak-spot recovery flow further down, which bypasses this and builds its own pool).
         function startStudyQuiz() {
             playSound('click');
+            closeModal('customTrainingModal');
             battleDisciplineBreakdown = {};
             battleTopicBreakdown = {};
 
             let pool = selectedDiscipline === 'all'
                 ? [...ALL_QUESTIONS]
                 : ALL_QUESTIONS.filter(q => q.category === selectedDiscipline);
+
+            if (selectedTopic !== 'all') {
+                const byTopic = pool.filter(q => q.topic === selectedTopic);
+                if (byTopic.length > 0) pool = byTopic;
+            }
 
             if (selectedDifficulty !== 'all') {
                 const byDifficulty = pool.filter(q => q.difficulty === selectedDifficulty);
@@ -1910,7 +1923,7 @@
 
             practiceMode = 'study';
             gameMode = 'solo';
-            currentQuestions = pool.slice(0, QUIZ_LENGTH);
+            currentQuestions = pool.slice(0, selectedQuestionCount);
 
             currentQIndex = 0;
             score = 0;
@@ -1921,6 +1934,62 @@
             bossHp = 100;
 
             showQuestionScreen();
+        }
+
+        // --- CUSTOM TRAINING MODAL ---
+        function renderTrainingTopicOptions() {
+            const wrap = document.getElementById('trainingTopicWrap');
+            const select = document.getElementById('trainingTopic');
+            if (!wrap || !select) return;
+
+            const topics = selectedDiscipline === 'all'
+                ? []
+                : Array.from(new Set(ALL_QUESTIONS.filter(q => q.category === selectedDiscipline).map(q => q.topic).filter(Boolean)));
+
+            if (topics.length === 0) {
+                wrap.classList.add('hidden');
+                selectedTopic = 'all';
+                return;
+            }
+
+            wrap.classList.remove('hidden');
+            select.innerHTML = '<option value="all">Все темы</option>' +
+                topics.map(t => `<option value="${t}">${t}</option>`).join('');
+            select.value = topics.includes(selectedTopic) ? selectedTopic : 'all';
+            selectedTopic = select.value;
+        }
+
+        function setTrainingDiscipline(disc) {
+            selectedDiscipline = disc;
+            selectedTopic = 'all';
+            renderTrainingTopicOptions();
+        }
+
+        function toggleStudyTimer() {
+            studyTimerEnabled = !studyTimerEnabled;
+            document.getElementById('toggleStudyTimer').classList.toggle('on', studyTimerEnabled);
+            playSound('click');
+        }
+
+        function toggleStudyExplanations() {
+            studyExplanationsEnabled = !studyExplanationsEnabled;
+            document.getElementById('toggleStudyExplanations').classList.toggle('on', studyExplanationsEnabled);
+            playSound('click');
+        }
+
+        function openCustomTrainingModal() {
+            document.getElementById('trainingDiscipline').value = selectedDiscipline;
+            renderTrainingTopicOptions();
+            document.getElementById('trainingDifficulty').value = selectedDifficulty;
+            document.getElementById('trainingCount').value = String(selectedQuestionCount);
+            document.getElementById('toggleStudyTimer').classList.toggle('on', studyTimerEnabled);
+            document.getElementById('toggleStudyExplanations').classList.toggle('on', studyExplanationsEnabled);
+
+            const banner = document.getElementById('trainingWeakSpotBanner');
+            if (banner) banner.classList.add('hidden');
+
+            openModal('customTrainingModal');
+            playSound('click');
         }
 
         function finishPracticeQuiz() {
@@ -2179,11 +2248,104 @@
                 const { cat, topic } = referenceView;
                 title.innerText = topic;
                 const text = (TOPIC_REFERENCE[cat] && TOPIC_REFERENCE[cat][topic]) || 'Материал по этой теме скоро появится.';
+                const inRecovery = recoveryContext && recoveryContext.cat === cat && recoveryContext.topic === topic;
+                const recoveryBtnHtml = inRecovery
+                    ? `<button onclick="launchRecoveryQuiz()" class="btn-amber-glow w-full py-2.5 rounded-lg font-military text-xs uppercase mt-1">▶ НАЧАТЬ ВОПРОСЫ</button>`
+                    : '';
                 body.innerHTML = `
                     <div class="text-[9px] font-mono text-slate-500 uppercase">${DISCIPLINE_LABELS[cat] || cat}</div>
                     <p class="text-[12px] text-slate-300 leading-relaxed font-mono bg-slate-950/60 border border-slate-800 rounded-lg p-3">${text}</p>
+                    ${recoveryBtnHtml}
                 `;
             }
+        }
+
+        // --- WEAK-SPOT RECOVERY ---
+        // Detected via the same disciplineStats/topicStats already powering the profile breakdown.
+        // Flow: show the topic's reference card first, then an escalating 5 easy / 5 medium / 3 hard
+        // run through that topic (falling back to the wider discipline where the topic itself is too
+        // small), finishing on the normal results screen as the "mini-control" readout.
+        let recoveryContext = null;
+
+        function startWeakSpotRecovery(cat, topic) {
+            recoveryContext = { cat, topic };
+            openReferenceModal(cat, topic);
+        }
+
+        function buildRecoveryPool(cat, topic) {
+            const targets = [['private', 5], ['sergeant', 5], ['officer', 3]];
+            const usedIds = new Set();
+            const result = [];
+            targets.forEach(([diff, n]) => {
+                let pool = ALL_QUESTIONS.filter(q => q.category === cat && q.topic === topic && q.difficulty === diff && !usedIds.has(q.id));
+                if (pool.length < n) {
+                    const wider = ALL_QUESTIONS.filter(q => q.category === cat && q.difficulty === diff && !usedIds.has(q.id) && q.topic !== topic);
+                    pool = pool.concat(wider);
+                }
+                pool.sort(() => Math.random() - 0.5);
+                const picked = pool.slice(0, n);
+                picked.forEach(q => usedIds.add(q.id));
+                result.push(...picked);
+            });
+            if (result.length < 13) {
+                const remaining = ALL_QUESTIONS.filter(q => q.category === cat && !usedIds.has(q.id));
+                remaining.sort(() => Math.random() - 0.5);
+                result.push(...remaining.slice(0, 13 - result.length));
+            }
+            return result;
+        }
+
+        function launchRecoveryQuiz() {
+            const ctx = recoveryContext;
+            recoveryContext = null;
+            if (!ctx) return;
+            closeModal('referenceModal');
+            playSound('click');
+
+            battleDisciplineBreakdown = {};
+            battleTopicBreakdown = {};
+            practiceMode = 'study';
+            gameMode = 'solo';
+            studyTimerEnabled = false;
+            studyExplanationsEnabled = true;
+            currentQuestions = buildRecoveryPool(ctx.cat, ctx.topic);
+
+            currentQIndex = 0;
+            score = 0;
+            scoreP2 = 0;
+            comboStreak = 0;
+            maxCombo = 0;
+            correctCount = 0;
+            bossHp = 100;
+
+            showQuestionScreen();
+        }
+
+        // Surfaced on the main menu's "Прогресс" tab — see updateProfileUI.
+        function renderWeakSpotCallout() {
+            const box = document.getElementById('weakSpotCallout');
+            const textEl = document.getElementById('weakSpotCalloutText');
+            if (!box || !textEl) return;
+
+            const weak = getWeakestDiscipline();
+            if (!weak) { box.classList.add('hidden'); return; }
+            const weakTopic = getWeakestTopicIn(weak.cat);
+
+            if (weakTopic) {
+                textEl.innerText = `${weak.label} → ${weakTopic.topic} — ${Math.round(weakTopic.pct)}%`;
+                box.dataset.cat = weak.cat;
+                box.dataset.topic = weakTopic.topic;
+                box.classList.remove('hidden');
+            } else {
+                // No single topic stands out yet (too little per-topic data) — still flag the discipline.
+                box.classList.add('hidden');
+            }
+        }
+
+        function startWeakSpotRecoveryFromCallout() {
+            const box = document.getElementById('weakSpotCallout');
+            if (!box || !box.dataset.cat || !box.dataset.topic) return;
+            startWeakSpotRecovery(box.dataset.cat, box.dataset.topic);
         }
 
         // Set right after an answer (see handleAnswer) so "ИЗУЧИТЬ ТЕМУ" knows which topic to open.
@@ -2731,7 +2893,9 @@
                 grid.appendChild(btn);
             });
 
-            if (practiceMode) {
+            // Review is always untimed; study mode respects the timer toggle from customTrainingModal.
+            const forceUntimed = practiceMode === 'review' || (practiceMode === 'study' && !studyTimerEnabled);
+            if (forceUntimed) {
                 clearInterval(timerInterval);
                 const timerEl = document.getElementById('hudTimer');
                 timerEl.innerText = '∞';
@@ -2899,7 +3063,12 @@
                 expHeader.innerHTML = `<span>❌</span><span>ОШИБКА!</span>`;
             }
 
-            expText.innerText = q.explanation;
+            if (practiceMode === 'study' && !studyExplanationsEnabled) {
+                expText.classList.add('hidden');
+            } else {
+                expText.classList.remove('hidden');
+                expText.innerText = q.explanation;
+            }
             expBox.classList.remove('hidden');
 
             lastAnsweredQuestion = q;

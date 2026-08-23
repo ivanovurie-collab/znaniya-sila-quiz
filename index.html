@@ -172,6 +172,11 @@
                             <span>КАМПАНИЯ: КУРСАНТ → СПЕЦИАЛИСТ</span>
                         </button>
 
+                        <button onclick="openCustomTrainingModal()" class="w-full py-2.5 rounded-xl text-xs font-military tracking-wider uppercase flex items-center justify-center space-x-2 cursor-pointer bg-slate-900/90 border border-indigo-500/50 text-indigo-300 active:scale-95 transition-all">
+                            <span class="text-sm">🎓</span>
+                            <span>ТРЕНИРОВКА</span>
+                        </button>
+
                         <div class="grid grid-cols-2 gap-2">
                             <button onclick="openDailyChest()" id="btnDailyChest" class="relative w-full py-2.5 rounded-xl text-[10px] font-military tracking-wider uppercase flex items-center justify-center space-x-1.5 cursor-pointer bg-gradient-to-r from-amber-600 to-yellow-500 text-slate-950 font-bold active:scale-95 transition-all shadow-lg">
                                 <span class="text-xs">🎁</span>
@@ -189,6 +194,12 @@
                     </div>
 
                     <div id="menuTabProgress" class="hidden grid grid-cols-1 gap-2">
+                        <div id="weakSpotCallout" class="hidden bg-amber-950/40 border border-amber-500/50 rounded-xl p-3 space-y-2 text-left">
+                            <div class="text-[10px] font-mono text-amber-400 uppercase">⚠️ Обнаружена проблема</div>
+                            <div id="weakSpotCalloutText" class="font-military text-sm text-amber-200"></div>
+                            <button onclick="startWeakSpotRecoveryFromCallout()" class="btn-amber-glow w-full py-2.5 rounded-lg font-military text-xs uppercase">НАЧАТЬ ВОССТАНОВЛЕНИЕ</button>
+                        </div>
+
                         <button onclick="startReviewQuiz()" id="btnReviewMistakes" class="w-full py-2.5 rounded-xl text-xs font-military tracking-wider uppercase flex items-center justify-center space-x-2 cursor-pointer bg-slate-900/90 border border-indigo-500/50 text-indigo-300 active:scale-95 transition-all">
                             <span class="text-xs">📖</span>
                             <span id="btnReviewMistakesLabel">ОШИБКИ (0)</span>
@@ -327,9 +338,9 @@
                         </button>
                     </div>
 
-                    <button onclick="startStudyQuiz()" class="w-full py-2.5 rounded-lg text-[11px] font-military uppercase tracking-wider flex items-center justify-center space-x-2 cursor-pointer bg-slate-900/80 border border-indigo-500/40 text-indigo-300 active:scale-95 transition-all">
+                    <button onclick="openCustomTrainingModal()" class="w-full py-2.5 rounded-lg text-[11px] font-military uppercase tracking-wider flex items-center justify-center space-x-2 cursor-pointer bg-slate-900/80 border border-indigo-500/40 text-indigo-300 active:scale-95 transition-all">
                         <span>🎓</span>
-                        <span>УЧЕБНЫЙ РЕЖИМ (без таймера и штрафов)</span>
+                        <span>ПОЛЬЗОВАТЕЛЬСКАЯ ТРЕНИРОВКА</span>
                     </button>
 
                 </div>
@@ -919,6 +930,82 @@
             </button>
 
             <div id="referenceBody" class="space-y-1.5"></div>
+        </div>
+    </div>
+
+    <!-- MODAL 5D: CUSTOM TRAINING (ПОЛЬЗОВАТЕЛЬСКАЯ ТРЕНИРОВКА) -->
+    <div id="customTrainingModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+        <div class="hud-card p-4 rounded-2xl max-w-sm w-full space-y-3 border-indigo-500/50 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <h3 class="font-military text-base text-indigo-300 flex items-center space-x-2">
+                    <span class="text-sm">🎓</span>
+                    <span>ПОЛЬЗОВАТЕЛЬСКАЯ ТРЕНИРОВКА</span>
+                </h3>
+                <button onclick="closeModal('customTrainingModal')" class="text-slate-400 text-base">
+                    <span>✖️</span>
+                </button>
+            </div>
+
+            <div id="trainingWeakSpotBanner" class="hidden bg-amber-950/40 border border-amber-500/40 rounded-lg px-2.5 py-2 text-[10px] font-mono text-amber-300"></div>
+
+            <div class="space-y-2.5 text-xs font-mono">
+                <div class="space-y-1">
+                    <label class="text-[10px] text-slate-400 uppercase">Дисциплина</label>
+                    <select id="trainingDiscipline" onchange="setTrainingDiscipline(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-200 font-military text-xs focus:outline-none focus:border-indigo-400">
+                        <option value="all">💥 Все дисциплины</option>
+                        <option value="gear">🪖 Вооружение & Экипировка</option>
+                        <option value="rhbz">🛡️ РХБЗ</option>
+                        <option value="tactics">⚔️ Тактика</option>
+                        <option value="btv">🚜 Бронетехника</option>
+                        <option value="fire">🎯 Огневая подготовка</option>
+                        <option value="svyaz">📡 Связь</option>
+                        <option value="ustav">📘 Уставы и звания</option>
+                        <option value="engineer">🔧 Инженерная подготовка</option>
+                    </select>
+                </div>
+
+                <div id="trainingTopicWrap" class="hidden space-y-1">
+                    <label class="text-[10px] text-slate-400 uppercase">Тема</label>
+                    <select id="trainingTopic" onchange="selectedTopic = this.value" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-200 font-military text-xs focus:outline-none focus:border-indigo-400">
+                        <option value="all">Все темы</option>
+                    </select>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="space-y-1">
+                        <label class="text-[10px] text-slate-400 uppercase">Сложность</label>
+                        <select id="trainingDifficulty" onchange="selectedDifficulty = this.value" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-200 font-military text-xs focus:outline-none focus:border-indigo-400">
+                            <option value="all">Любая</option>
+                            <option value="private">Рядовой</option>
+                            <option value="sergeant">Сержант</option>
+                            <option value="officer">Офицер</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] text-slate-400 uppercase">Вопросов</label>
+                        <select id="trainingCount" onchange="selectedQuestionCount = parseInt(this.value)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2.5 py-2 text-slate-200 font-military text-xs focus:outline-none focus:border-indigo-400">
+                            <option value="5">5</option>
+                            <option value="10" selected>10</option>
+                            <option value="20">20</option>
+                            <option value="50">50</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between pt-1 border-t border-slate-800">
+                    <div class="text-slate-200">Ограничение по времени</div>
+                    <button onclick="toggleStudyTimer()" id="toggleStudyTimer" class="toggle-switch"></button>
+                </div>
+                <div class="flex items-center justify-between">
+                    <div class="text-slate-200">Показывать объяснения</div>
+                    <button onclick="toggleStudyExplanations()" id="toggleStudyExplanations" class="toggle-switch"></button>
+                </div>
+            </div>
+
+            <button onclick="startStudyQuiz()" class="btn-green-glow w-full py-3 rounded-lg text-sm font-military uppercase tracking-wider flex items-center justify-center space-x-2 cursor-pointer">
+                <span>🎓</span>
+                <span>НАЧАТЬ ТРЕНИРОВКУ</span>
+            </button>
         </div>
     </div>
 
