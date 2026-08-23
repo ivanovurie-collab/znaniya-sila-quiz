@@ -1,7 +1,7 @@
         // --- APP VERSION ---
         // Single source of truth for the version shown in the tab title and the main-menu badge —
         // bump this on every real content/feature change instead of editing those strings by hand.
-        const APP_VERSION = '5.1';
+        const APP_VERSION = '5.2';
 
         // --- GAME PERSISTENT STATE ---
         let playerData = {
@@ -2564,6 +2564,68 @@
 
         const QUIZ_LENGTH = 10;
 
+        // The boss ("ГЕНЕРАЛ-ЭКЗАМЕНАТОР") draws more questions from disciplines/topics the player
+        // is weak in, instead of a flat random pool — so it acts as a real final check on genuine
+        // gaps rather than just another quiz. Disciplines/topics with too little data (or none)
+        // get a neutral mid-range weight so they still show up without dominating the fight.
+        function buildAdaptiveBossPool(discipline, difficulty, length) {
+            const MIN_SAMPLE = 3;
+            const NEUTRAL_WEIGHT = 45;
+            const categories = discipline === 'all' ? Object.keys(DISCIPLINE_LABELS) : [discipline];
+
+            const buckets = [];
+            categories.forEach(cat => {
+                const topicsInCat = new Set(ALL_QUESTIONS.filter(q => q.category === cat).map(q => q.topic).filter(Boolean));
+                if (topicsInCat.size === 0) {
+                    const s = playerData.disciplineStats && playerData.disciplineStats[cat];
+                    const acc = (s && s.total >= MIN_SAMPLE) ? (s.correct / s.total) * 100 : NEUTRAL_WEIGHT;
+                    buckets.push({ cat, topic: null, weight: Math.max(5, 100 - acc) });
+                } else {
+                    topicsInCat.forEach(topic => {
+                        const s = playerData.topicStats && playerData.topicStats[cat] && playerData.topicStats[cat][topic];
+                        const acc = (s && s.total >= MIN_SAMPLE) ? (s.correct / s.total) * 100 : NEUTRAL_WEIGHT;
+                        buckets.push({ cat, topic, weight: Math.max(5, 100 - acc) });
+                    });
+                }
+            });
+
+            const pickedIds = new Set();
+            const result = [];
+
+            for (let i = 0; i < length && buckets.length > 0; i++) {
+                const totalWeight = buckets.reduce((sum, b) => sum + b.weight, 0);
+                const roll = Math.random() * totalWeight;
+                let acc = 0, chosenIdx = buckets.length - 1;
+                for (let j = 0; j < buckets.length; j++) {
+                    acc += buckets[j].weight;
+                    if (roll <= acc) { chosenIdx = j; break; }
+                }
+                const bucket = buckets[chosenIdx];
+                let candidates = ALL_QUESTIONS.filter(q =>
+                    q.category === bucket.cat &&
+                    (bucket.topic ? q.topic === bucket.topic : true) &&
+                    (difficulty === 'all' || q.difficulty === difficulty) &&
+                    !pickedIds.has(q.id)
+                );
+                if (candidates.length === 0) {
+                    buckets.splice(chosenIdx, 1);
+                    i--;
+                    continue;
+                }
+                const picked = candidates[Math.floor(Math.random() * candidates.length)];
+                pickedIds.add(picked.id);
+                result.push(picked);
+            }
+
+            if (result.length < length) {
+                const remaining = ALL_QUESTIONS.filter(q => !pickedIds.has(q.id));
+                remaining.sort(() => Math.random() - 0.5);
+                result.push(...remaining.slice(0, length - result.length));
+            }
+
+            return result;
+        }
+
         function startQuiz() {
             playSound('click');
             practiceMode = null;
@@ -2571,18 +2633,24 @@
             battleDisciplineBreakdown = {};
             battleTopicBreakdown = {};
 
-            let pool = selectedDiscipline === 'all'
-                ? [...ALL_QUESTIONS]
-                : ALL_QUESTIONS.filter(q => q.category === selectedDiscipline);
+            let pool;
+            if (gameMode === 'boss') {
+                pool = buildAdaptiveBossPool(selectedDiscipline, selectedDifficulty, QUIZ_LENGTH);
+            } else {
+                pool = selectedDiscipline === 'all'
+                    ? [...ALL_QUESTIONS]
+                    : ALL_QUESTIONS.filter(q => q.category === selectedDiscipline);
 
-            if (selectedDifficulty !== 'all') {
-                const byDifficulty = pool.filter(q => q.difficulty === selectedDifficulty);
-                if (byDifficulty.length > 0) pool = byDifficulty;
+                if (selectedDifficulty !== 'all') {
+                    const byDifficulty = pool.filter(q => q.difficulty === selectedDifficulty);
+                    if (byDifficulty.length > 0) pool = byDifficulty;
+                }
+
+                if (pool.length === 0) pool = [...ALL_QUESTIONS];
+                pool.sort(() => Math.random() - 0.5);
+                pool = pool.slice(0, QUIZ_LENGTH);
             }
-
-            if (pool.length === 0) pool = [...ALL_QUESTIONS];
-            pool.sort(() => Math.random() - 0.5);
-            currentQuestions = pool.slice(0, QUIZ_LENGTH);
+            currentQuestions = pool;
 
             currentQIndex = 0;
             score = 0;
