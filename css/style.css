@@ -11,6 +11,10 @@
             --camo-brown: #1f1d13;
         }
 
+        html, body {
+            overscroll-behavior-y: none;
+        }
+
         body {
             font-family: 'Chakra Petch', 'Russo One', sans-serif;
             background-color: var(--hud-dark);
