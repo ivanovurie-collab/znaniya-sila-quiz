@@ -1,7 +1,7 @@
         // --- APP VERSION ---
         // Single source of truth for the version shown in the tab title and the main-menu badge —
         // bump this on every real content/feature change instead of editing those strings by hand.
-        const APP_VERSION = '4.9';
+        const APP_VERSION = '5.0';
 
         // --- GAME PERSISTENT STATE ---
         let playerData = {
@@ -2116,6 +2116,83 @@
             return pct >= 80 ? '🟢' : pct >= 65 ? '🟡' : pct >= 50 ? '🟠' : '🔴';
         }
 
+        // --- KNOWLEDGE REFERENCE (СПРАВОЧНИК) ---
+        // Three-level browse: disciplines -> topics -> a short read-only card (see TOPIC_REFERENCE
+        // in questions.js). Reached either from the main menu or via "ИЗУЧИТЬ ТЕМУ" after an answer.
+        let referenceView = { level: 'disciplines', cat: null, topic: null };
+
+        function openReferenceModal(cat, topic) {
+            if (cat && topic) referenceView = { level: 'card', cat, topic };
+            else if (cat) referenceView = { level: 'topics', cat, topic: null };
+            else referenceView = { level: 'disciplines', cat: null, topic: null };
+            renderReferenceModal();
+            openModal('referenceModal');
+            playSound('click');
+        }
+
+        function referenceGoTopics(cat) {
+            referenceView = { level: 'topics', cat, topic: null };
+            renderReferenceModal();
+        }
+
+        function referenceGoCard(cat, topic) {
+            referenceView = { level: 'card', cat, topic };
+            renderReferenceModal();
+        }
+
+        function referenceBack() {
+            if (referenceView.level === 'card') referenceGoTopics(referenceView.cat);
+            else {
+                referenceView = { level: 'disciplines', cat: null, topic: null };
+                renderReferenceModal();
+            }
+        }
+
+        function renderReferenceModal() {
+            const body = document.getElementById('referenceBody');
+            const backBtn = document.getElementById('referenceBackBtn');
+            const title = document.getElementById('referenceHeaderTitle');
+            if (!body) return;
+
+            if (referenceView.level === 'disciplines') {
+                backBtn.classList.add('hidden');
+                title.innerText = 'СПРАВОЧНИК';
+                body.innerHTML = Object.keys(TOPIC_REFERENCE).map(cat => `
+                    <button onclick="referenceGoTopics('${cat}')" class="w-full flex items-center justify-between py-2.5 px-3 rounded-lg bg-slate-900/80 border border-slate-800 text-left active:scale-95 transition-all">
+                        <span class="text-xs font-military text-slate-200">📁 ${DISCIPLINE_LABELS[cat] || cat}</span>
+                        <span class="text-slate-500 text-xs">▸</span>
+                    </button>
+                `).join('');
+            } else if (referenceView.level === 'topics') {
+                backBtn.classList.remove('hidden');
+                const cat = referenceView.cat;
+                title.innerText = DISCIPLINE_LABELS[cat] || cat;
+                const topics = TOPIC_REFERENCE[cat] || {};
+                body.innerHTML = Object.keys(topics).map(topic => `
+                    <button onclick="referenceGoCard('${cat}', ${JSON.stringify(topic)})" class="w-full flex items-center justify-between py-2.5 px-3 rounded-lg bg-slate-900/80 border border-slate-800 text-left active:scale-95 transition-all">
+                        <span class="text-[11px] font-mono text-slate-300">${topic}</span>
+                        <span class="text-slate-500 text-xs">▸</span>
+                    </button>
+                `).join('');
+            } else if (referenceView.level === 'card') {
+                backBtn.classList.remove('hidden');
+                const { cat, topic } = referenceView;
+                title.innerText = topic;
+                const text = (TOPIC_REFERENCE[cat] && TOPIC_REFERENCE[cat][topic]) || 'Материал по этой теме скоро появится.';
+                body.innerHTML = `
+                    <div class="text-[9px] font-mono text-slate-500 uppercase">${DISCIPLINE_LABELS[cat] || cat}</div>
+                    <p class="text-[12px] text-slate-300 leading-relaxed font-mono bg-slate-950/60 border border-slate-800 rounded-lg p-3">${text}</p>
+                `;
+            }
+        }
+
+        // Set right after an answer (see handleAnswer) so "ИЗУЧИТЬ ТЕМУ" knows which topic to open.
+        let lastAnsweredQuestion = null;
+        function openReferenceFromLastQuestion() {
+            if (!lastAnsweredQuestion || !lastAnsweredQuestion.topic) return;
+            openReferenceModal(lastAnsweredQuestion.category, lastAnsweredQuestion.topic);
+        }
+
         // Which discipline rows currently have their topic list expanded — UI-only, not persisted.
         const expandedDisciplineTopics = new Set();
 
@@ -2744,6 +2821,13 @@
 
             expText.innerText = q.explanation;
             expBox.classList.remove('hidden');
+
+            lastAnsweredQuestion = q;
+            const studyBtn = document.getElementById('btnStudyTopic');
+            if (studyBtn) {
+                const hasTopic = q.topic && TOPIC_REFERENCE[q.category] && TOPIC_REFERENCE[q.category][q.topic];
+                studyBtn.classList.toggle('hidden', !hasTopic);
+            }
 
             document.getElementById('p1ScoreValDisplay').innerText = `${score} б.`;
             savePlayerData();
