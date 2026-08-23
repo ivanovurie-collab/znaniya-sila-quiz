@@ -180,6 +180,18 @@
         }
         .btn-purple-glow:active { transform: scale(0.97); filter: brightness(1.15); }
 
+        /* Main-menu tab switcher (Играть / Прогресс / Ещё) */
+        .menu-tab-btn {
+            background: rgba(9, 16, 12, 0.9);
+            border: 1px solid rgba(132, 204, 22, 0.25);
+            color: #94a3b8;
+        }
+        .menu-tab-btn.active {
+            background: rgba(132, 204, 22, 0.15);
+            border-color: #84cc16;
+            color: #bef264;
+        }
+
         .btn-tactical-option {
             background: rgba(14, 24, 18, 0.95);
             border: 1px solid rgba(132, 204, 22, 0.3);

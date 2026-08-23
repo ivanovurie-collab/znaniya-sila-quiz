@@ -1,7 +1,7 @@
         // --- APP VERSION ---
         // Single source of truth for the version shown in the tab title and the main-menu badge —
         // bump this on every real content/feature change instead of editing those strings by hand.
-        const APP_VERSION = '5.0';
+        const APP_VERSION = '5.1';
 
         // --- GAME PERSISTENT STATE ---
         let playerData = {
@@ -2484,6 +2484,18 @@
             }
         }
 
+        // Main-menu tab switcher — keeps the entry screen from showing every button at once.
+        function setMenuTab(tab) {
+            const tabs = { play: 'menuTabPlay', progress: 'menuTabProgress', more: 'menuTabMore' };
+            Object.keys(tabs).forEach(key => {
+                const panel = document.getElementById(tabs[key]);
+                const btn = document.getElementById('menuTabBtn' + key.charAt(0).toUpperCase() + key.slice(1));
+                if (panel) panel.classList.toggle('hidden', key !== tab);
+                if (btn) btn.classList.toggle('active', key === tab);
+            });
+            playSound('click');
+        }
+
         function showScreen(screenId) {
             playSound('click');
             const screens = ['screenMenu', 'screenSetup', 'screenQuiz', 'screenResults'];
@@ -3979,6 +3991,7 @@
         document.title = `Знания — Сила: Курсантский Квиз v${APP_VERSION} (Tactical Profile & Audio)`;
         const versionBadgeEl = document.getElementById('appVersionBadge');
         if (versionBadgeEl) versionBadgeEl.innerText = `ТАКТИЧЕСКИЙ СИМУЛЯТОР V${APP_VERSION}`;
+        setMenuTab('play');
 
         window.addEventListener('load', () => { loadPlayerData(); });
         window.addEventListener('touchstart', () => { initAudio(); }, { once: true });
