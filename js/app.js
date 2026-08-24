@@ -1,7 +1,7 @@
         // --- APP VERSION ---
         // Single source of truth for the version shown in the tab title and the main-menu badge —
         // bump this on every real content/feature change instead of editing those strings by hand.
-        const APP_VERSION = '5.4';
+        const APP_VERSION = '5.5';
 
         // --- GAME PERSISTENT STATE ---
         let playerData = {
@@ -169,6 +169,10 @@
         let maxCombo = 0;
         let correctCount = 0;
         let bossHp = 100;
+        let survivalLives = 3;
+        let blitzInterval = null;
+        let blitzTimeLeft = 60;
+        const BLITZ_DURATION = 60;
         let timerInterval = null;
         let timeLeft = 20;
         let autoAdvanceTimeout = null;
@@ -1930,6 +1934,81 @@
             return (playerData.missedQuestions || []).filter(m => m.dueDate <= today);
         }
 
+        // --- FLASHCARDS (КАРТОЧКИ) ---
+        // Flip-card alternative to the multiple-choice ОШИБКИ review, drawing from the same SRS due
+        // queue. "Знаю"/"Не знаю" feed straight into clearMistake/recordMistake, so a card answered
+        // here advances (or resets) the same spaced-repetition schedule as a normal battle would.
+        let flashcardQueue = [];
+        let flashcardIndex = 0;
+        let flashcardStats = { known: 0, unknown: 0 };
+
+        function startFlashcards() {
+            flashcardQueue = getDueMissedQuestions().map(m => ALL_QUESTIONS.find(q => q.id === m.id)).filter(Boolean);
+            if (flashcardQueue.length === 0) {
+                playSound('wrong');
+                const total = (playerData.missedQuestions || []).length;
+                showFloatingText(total > 0 ? 'СЛЕДУЮЩЕЕ ПОВТОРЕНИЕ ЕЩЁ НЕ ПОДОШЛО' : 'НЕТ КАРТОЧЕК ДЛЯ ПОВТОРЕНИЯ', window.innerWidth / 2 - 130, window.innerHeight / 2, '#f59e0b');
+                return;
+            }
+            flashcardQueue.sort(() => Math.random() - 0.5);
+            flashcardIndex = 0;
+            flashcardStats = { known: 0, unknown: 0 };
+            document.getElementById('flashcardDone').classList.add('hidden');
+            renderFlashcard();
+            openModal('flashcardsModal');
+            playSound('click');
+        }
+
+        function renderFlashcard() {
+            const q = flashcardQueue[flashcardIndex];
+            document.getElementById('flashcardProgress').innerText = `${flashcardIndex + 1} / ${flashcardQueue.length}`;
+            document.getElementById('flashcardQuestion').innerText = q.question;
+            document.getElementById('flashcardAnswer').innerText = q.options[q.correct];
+            document.getElementById('flashcardExplanation').innerText = q.explanation;
+            document.getElementById('flashcardFront').classList.remove('hidden');
+            document.getElementById('flashcardBack').classList.add('hidden');
+        }
+
+        function flipFlashcard() {
+            document.getElementById('flashcardFront').classList.add('hidden');
+            document.getElementById('flashcardBack').classList.remove('hidden');
+            playSound('click');
+        }
+
+        function answerFlashcard(knewIt) {
+            const q = flashcardQueue[flashcardIndex];
+            if (knewIt) {
+                clearMistake(q);
+                flashcardStats.known++;
+                playSound('correct');
+            } else {
+                recordMistake(q);
+                flashcardStats.unknown++;
+                playSound('wrong');
+            }
+            savePlayerData();
+
+            flashcardIndex++;
+            if (flashcardIndex < flashcardQueue.length) {
+                renderFlashcard();
+            } else {
+                finishFlashcards();
+            }
+        }
+
+        function finishFlashcards() {
+            document.getElementById('flashcardFront').classList.add('hidden');
+            document.getElementById('flashcardBack').classList.add('hidden');
+            document.getElementById('flashcardDone').classList.remove('hidden');
+            document.getElementById('flashcardDoneText').innerText = `Знаю: ${flashcardStats.known} · Не знаю: ${flashcardStats.unknown}`;
+            updateProfileUI();
+        }
+
+        function closeFlashcards() {
+            closeModal('flashcardsModal');
+            updateProfileUI();
+        }
+
         function updateReviewButtonUI() {
             const label = document.getElementById('btnReviewMistakesLabel');
             const btn = document.getElementById('btnReviewMistakes');
@@ -2968,6 +3047,104 @@
             showQuestionScreen();
         }
 
+        // --- BLITZ MODE — 60 seconds, back-to-back, no explanations, count of correct answers ---
+        function buildBlitzPool(size) {
+            let pool = shuffleArray(ALL_QUESTIONS);
+            while (pool.length < size) pool = pool.concat(shuffleArray(ALL_QUESTIONS));
+            return pool.slice(0, size);
+        }
+
+        function startBlitzQuiz() {
+            playSound('click');
+            practiceMode = null;
+            activeCampaignStageIndex = null;
+            battleDisciplineBreakdown = {};
+            battleTopicBreakdown = {};
+
+            gameMode = 'blitz';
+            currentQuestions = buildBlitzPool(80);
+            currentQIndex = 0;
+            score = 0;
+            scoreP2 = 0;
+            comboStreak = 0;
+            maxCombo = 0;
+            correctCount = 0;
+            bossHp = 100;
+            blitzTimeLeft = BLITZ_DURATION;
+
+            playerData.stats.totalGames = (playerData.stats.totalGames || 0) + 1;
+            savePlayerData();
+
+            showQuestionScreen();
+            startBlitzTimer();
+        }
+
+        function startBlitzTimer() {
+            clearInterval(blitzInterval);
+            updateBlitzTimerUI();
+            blitzInterval = setInterval(() => {
+                blitzTimeLeft--;
+                updateBlitzTimerUI();
+                if (blitzTimeLeft <= 0) finishBlitz();
+            }, 1000);
+        }
+
+        function updateBlitzTimerUI() {
+            const el = document.getElementById('hudTimer');
+            if (!el) return;
+            el.innerText = blitzTimeLeft;
+            el.classList.toggle('timer-critical', blitzTimeLeft <= 10);
+        }
+
+        function finishBlitz() {
+            clearInterval(blitzInterval);
+            clearTimeout(autoAdvanceTimeout);
+            // Only count questions actually presented — an unanswered one showing when time ran
+            // out shouldn't drag accuracy down.
+            currentQuestions = currentQuestions.slice(0, currentQIndex);
+            finishQuiz();
+        }
+
+        // --- SURVIVAL MODE — 3 lives, difficulty escalates every 5 questions, untimed per-question ---
+        function buildSurvivalPool() {
+            const tiers = [
+                { diff: 'private', count: 5 },
+                { diff: 'sergeant', count: 5 },
+                { diff: 'officer', count: 40 }
+            ];
+            const result = [];
+            tiers.forEach(t => {
+                let pool = ALL_QUESTIONS.filter(q => q.difficulty === t.diff);
+                pool.sort(() => Math.random() - 0.5);
+                result.push(...pool.slice(0, t.count));
+            });
+            return result;
+        }
+
+        function startSurvivalQuiz() {
+            playSound('click');
+            practiceMode = null;
+            activeCampaignStageIndex = null;
+            battleDisciplineBreakdown = {};
+            battleTopicBreakdown = {};
+
+            gameMode = 'survival';
+            currentQuestions = buildSurvivalPool();
+            currentQIndex = 0;
+            score = 0;
+            scoreP2 = 0;
+            comboStreak = 0;
+            maxCombo = 0;
+            correctCount = 0;
+            bossHp = 100;
+            survivalLives = 3;
+
+            playerData.stats.totalGames = (playerData.stats.totalGames || 0) + 1;
+            savePlayerData();
+
+            showQuestionScreen();
+        }
+
         function showQuestionScreen() {
             showScreen('screenQuiz');
             const q = currentQuestions[currentQIndex];
@@ -2998,6 +3175,14 @@
                 document.getElementById('bossHpBar').style.width = `${bossHp}%`;
             } else {
                 bossContainer.classList.add('hidden');
+            }
+
+            const survivalContainer = document.getElementById('survivalLivesContainer');
+            if (gameMode === 'survival') {
+                survivalContainer.classList.remove('hidden');
+                survivalContainer.innerText = '❤️'.repeat(survivalLives) + '🖤'.repeat(Math.max(0, 3 - survivalLives));
+            } else {
+                survivalContainer.classList.add('hidden');
             }
 
             const comboBanner = document.getElementById('comboBanner');
@@ -3033,15 +3218,21 @@
                 grid.appendChild(btn);
             });
 
-            // Review is always untimed; study mode respects the timer toggle from customTrainingModal.
-            const forceUntimed = practiceMode === 'review' || (practiceMode === 'study' && !studyTimerEnabled);
-            if (forceUntimed) {
+            // Blitz runs its own standalone 60s countdown (see startBlitzTimer) — leave hudTimer alone
+            // here so it doesn't get reset on every question. Review/survival are always untimed;
+            // study mode respects the timer toggle from customTrainingModal.
+            if (gameMode === 'blitz') {
                 clearInterval(timerInterval);
-                const timerEl = document.getElementById('hudTimer');
-                timerEl.innerText = '∞';
-                timerEl.classList.remove('timer-critical');
             } else {
-                startTimer();
+                const forceUntimed = practiceMode === 'review' || (practiceMode === 'study' && !studyTimerEnabled) || gameMode === 'survival';
+                if (forceUntimed) {
+                    clearInterval(timerInterval);
+                    const timerEl = document.getElementById('hudTimer');
+                    timerEl.innerText = '∞';
+                    timerEl.classList.remove('timer-critical');
+                } else {
+                    startTimer();
+                }
             }
         }
 
@@ -3199,8 +3390,24 @@
                 showFloatingText(`ПРОМАХ!`, clickX, clickY, '#ef4444');
                 hapticFeedback([50, 40, 50]);
 
+                if (gameMode === 'survival') {
+                    survivalLives = Math.max(0, survivalLives - 1);
+                    const livesEl = document.getElementById('survivalLivesContainer');
+                    if (livesEl) livesEl.innerText = '❤️'.repeat(survivalLives) + '🖤'.repeat(3 - survivalLives);
+                }
+
                 expHeader.className = "flex items-center space-x-2 font-military text-xs uppercase text-red-400";
                 expHeader.innerHTML = `<span>❌</span><span>ОШИБКА!</span>`;
+            }
+
+            // Blitz skips the explanation screen entirely and moves straight to the next question —
+            // "один вопрос -> ответил -> следующий, без длинных переходов".
+            if (gameMode === 'blitz') {
+                document.getElementById('p1ScoreValDisplay').innerText = `${score} б.`;
+                savePlayerData();
+                clearTimeout(autoAdvanceTimeout);
+                autoAdvanceTimeout = setTimeout(() => nextQuestion(), 350);
+                return;
             }
 
             if (practiceMode === 'study' && !studyExplanationsEnabled) {
@@ -3230,21 +3437,39 @@
         function nextQuestion() {
             clearTimeout(autoAdvanceTimeout);
             currentQIndex++;
-            if (currentQIndex < currentQuestions.length && (gameMode !== 'boss' || bossHp > 0)) {
+
+            if (gameMode === 'blitz') {
+                // Blitz only stops via its standalone timer (finishBlitz) — refill if it runs dry.
+                if (currentQIndex >= currentQuestions.length) currentQuestions = currentQuestions.concat(buildBlitzPool(60));
+                showQuestionScreen();
+                return;
+            }
+
+            const bossAlive = gameMode !== 'boss' || bossHp > 0;
+            const survivalAlive = gameMode !== 'survival' || survivalLives > 0;
+            if (currentQIndex < currentQuestions.length && bossAlive && survivalAlive) {
                 showQuestionScreen();
             } else {
+                if (gameMode === 'survival') currentQuestions = currentQuestions.slice(0, currentQIndex);
                 finishQuiz();
             }
         }
 
         function surrenderQuiz() {
             clearInterval(timerInterval);
+            clearInterval(blitzInterval);
+            if (gameMode === 'blitz' || gameMode === 'survival') {
+                currentQuestions = currentQuestions.slice(0, currentQIndex);
+            }
             playSound('wrong');
             finishQuiz();
         }
 
         function finishQuiz() {
             if (practiceMode) { finishPracticeQuiz(); return; }
+
+            clearInterval(timerInterval);
+            clearInterval(blitzInterval);
 
             showScreen('screenResults');
             updateQuestProgress('q1', 1);
@@ -3323,6 +3548,12 @@
             } else if (gameMode === 'boss' && bossHp <= 0) {
                 rankIcon.innerText = "⚔️";
                 rankTitle.innerText = "БОСС ПОВЕРЖЕН!";
+            } else if (gameMode === 'survival') {
+                rankIcon.innerText = "🧨";
+                rankTitle.innerText = `ВЫЖИЛ: ${totalQuestions} ${pluralQuestions(totalQuestions)}`;
+            } else if (gameMode === 'blitz') {
+                rankIcon.innerText = "⚡";
+                rankTitle.innerText = `БЛИЦ: ${correctCount} ВЕРНЫХ ЗА ${BLITZ_DURATION} СЕК`;
             } else if (accuracy >= 90) {
                 rankIcon.innerText = "⭐️⭐️⭐️⭐️⭐️";
                 rankTitle.innerText = "ОТЛИЧНЫЙ РЕЗУЛЬТАТ!";

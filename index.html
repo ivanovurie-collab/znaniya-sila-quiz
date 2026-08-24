@@ -187,6 +187,17 @@
                         </button>
 
                         <div class="grid grid-cols-2 gap-2">
+                            <button onclick="startBlitzQuiz()" class="w-full py-2.5 rounded-xl text-[10px] font-military tracking-wider uppercase flex items-center justify-center space-x-1.5 cursor-pointer bg-slate-900/90 border border-yellow-500/50 text-yellow-300 active:scale-95 transition-all">
+                                <span class="text-xs">⚡</span>
+                                <span>БЛИЦ 60 СЕК</span>
+                            </button>
+                            <button onclick="startSurvivalQuiz()" class="w-full py-2.5 rounded-xl text-[10px] font-military tracking-wider uppercase flex items-center justify-center space-x-1.5 cursor-pointer bg-slate-900/90 border border-red-500/50 text-red-300 active:scale-95 transition-all">
+                                <span class="text-xs">🧨</span>
+                                <span>ВЫЖИВАНИЕ</span>
+                            </button>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
                             <button onclick="openDailyChest()" id="btnDailyChest" class="relative w-full py-2.5 rounded-xl text-[10px] font-military tracking-wider uppercase flex items-center justify-center space-x-1.5 cursor-pointer bg-gradient-to-r from-amber-600 to-yellow-500 text-slate-950 font-bold active:scale-95 transition-all shadow-lg">
                                 <span class="text-xs">🎁</span>
                                 <span id="btnDailyChestLabel">СУНДУК ДНЯ</span>
@@ -209,10 +220,16 @@
                             <button onclick="startWeakSpotRecoveryFromCallout()" class="btn-amber-glow w-full py-2.5 rounded-lg font-military text-xs uppercase">НАЧАТЬ ВОССТАНОВЛЕНИЕ</button>
                         </div>
 
-                        <button onclick="startReviewQuiz()" id="btnReviewMistakes" class="w-full py-2.5 rounded-xl text-xs font-military tracking-wider uppercase flex items-center justify-center space-x-2 cursor-pointer bg-slate-900/90 border border-indigo-500/50 text-indigo-300 active:scale-95 transition-all">
-                            <span class="text-xs">📖</span>
-                            <span id="btnReviewMistakesLabel">ОШИБКИ (0)</span>
-                        </button>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="startReviewQuiz()" id="btnReviewMistakes" class="w-full py-2.5 rounded-xl text-[10px] font-military tracking-wider uppercase flex items-center justify-center space-x-1.5 cursor-pointer bg-slate-900/90 border border-indigo-500/50 text-indigo-300 active:scale-95 transition-all">
+                                <span class="text-xs">📖</span>
+                                <span id="btnReviewMistakesLabel">ОШИБКИ (0)</span>
+                            </button>
+                            <button onclick="startFlashcards()" class="w-full py-2.5 rounded-xl text-[10px] font-military tracking-wider uppercase flex items-center justify-center space-x-1.5 cursor-pointer bg-slate-900/90 border border-lime-500/50 text-lime-300 active:scale-95 transition-all">
+                                <span class="text-xs">🃏</span>
+                                <span>КАРТОЧКИ</span>
+                            </button>
+                        </div>
 
                         <button onclick="openModal('friendsModal')" class="w-full py-2.5 rounded-xl text-xs font-military tracking-wider uppercase flex items-center justify-center space-x-2 cursor-pointer bg-slate-900/90 border border-amber-500/50 text-amber-300 active:scale-95 transition-all">
                             <span class="text-xs">🏆</span>
@@ -393,6 +410,9 @@
                         <div id="bossHpBar" class="h-full bg-gradient-to-r from-purple-600 to-red-500 transition-all duration-300" style="width: 100%"></div>
                     </div>
                 </div>
+
+                <!-- SURVIVAL LIVES (Visible only in Survival Mode) -->
+                <div id="survivalLivesContainer" class="hidden bg-slate-950 border border-red-500/60 p-2 rounded-xl text-center text-lg tracking-widest"></div>
 
                 <!-- Player Score & Timer Header Card -->
                 <div class="hud-card p-2.5 rounded-xl flex items-center justify-between" id="scoreHeaderCard">
@@ -1041,6 +1061,55 @@
             </div>
 
             <div id="examTicketsList" class="space-y-2"></div>
+        </div>
+    </div>
+
+    <!-- MODAL 5F: FLASHCARDS (КАРТОЧКИ) — flip-card review of the SRS due queue -->
+    <div id="flashcardsModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 hidden flex items-center justify-center p-3">
+        <div class="hud-card p-4 rounded-2xl max-w-sm w-full space-y-3 border-lime-500/50">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <h3 class="font-military text-base text-lime-300 flex items-center space-x-2">
+                    <span class="text-sm">🃏</span>
+                    <span>КАРТОЧКИ</span>
+                </h3>
+                <div class="flex items-center space-x-2">
+                    <span id="flashcardProgress" class="text-[10px] font-mono text-slate-500">1 / 1</span>
+                    <button onclick="closeFlashcards()" class="text-slate-400 text-base">
+                        <span>✖️</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="flashcardFront" class="space-y-3">
+                <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 min-h-[120px] flex items-center justify-center text-center">
+                    <p id="flashcardQuestion" class="font-military text-sm text-slate-100 leading-snug"></p>
+                </div>
+                <button onclick="flipFlashcard()" class="btn-green-glow w-full py-3 rounded-lg text-sm font-military uppercase tracking-wider cursor-pointer">
+                    ПЕРЕВЕРНУТЬ
+                </button>
+            </div>
+
+            <div id="flashcardBack" class="hidden space-y-3">
+                <div class="bg-slate-950/80 border border-lime-500/40 rounded-xl p-4 space-y-2 text-center">
+                    <div class="text-[9px] font-mono text-slate-500 uppercase">Правильный ответ</div>
+                    <p id="flashcardAnswer" class="font-military text-sm text-lime-300"></p>
+                    <p id="flashcardExplanation" class="text-[11px] text-slate-400 font-mono leading-snug pt-1 border-t border-slate-800"></p>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="answerFlashcard(false)" class="py-3 rounded-lg text-xs font-military uppercase tracking-wider cursor-pointer bg-red-950/60 border border-red-500/50 text-red-300 active:scale-95 transition-all">
+                        👎 НЕ ЗНАЮ
+                    </button>
+                    <button onclick="answerFlashcard(true)" class="py-3 rounded-lg text-xs font-military uppercase tracking-wider cursor-pointer bg-lime-950/60 border border-lime-500/50 text-lime-300 active:scale-95 transition-all">
+                        👍 ЗНАЮ
+                    </button>
+                </div>
+            </div>
+
+            <div id="flashcardDone" class="hidden space-y-3 text-center py-4">
+                <div class="text-3xl">🏁</div>
+                <div id="flashcardDoneText" class="font-military text-sm text-slate-200"></div>
+                <button onclick="closeFlashcards()" class="btn-green-glow w-full py-3 rounded-lg text-sm font-military uppercase tracking-wider cursor-pointer">ГОТОВО</button>
+            </div>
         </div>
     </div>
 
