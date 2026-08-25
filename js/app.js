@@ -1,7 +1,7 @@
         // --- APP VERSION ---
         // Single source of truth for the version shown in the tab title and the main-menu badge —
         // bump this on every real content/feature change instead of editing those strings by hand.
-        const APP_VERSION = '5.7';
+        const APP_VERSION = '5.8';
 
         // --- GAME PERSISTENT STATE ---
         let playerData = {
@@ -319,7 +319,7 @@
             if (!list) return;
             const campaign = playerData.campaign || { unlockedStageIndex: 0, completedStages: {} };
 
-            list.className = 'grid grid-cols-2 gap-2';
+            list.className = 'space-y-1.5 font-mono text-xs';
             list.innerHTML = '';
             CAMPAIGN_STAGES.forEach((stage, idx) => {
                 const isUnlocked = idx <= campaign.unlockedStageIndex;
@@ -327,40 +327,41 @@
                 const isCompleted = !!(record && record.completed);
                 const pct = record ? record.bestAccuracy : 0;
 
-                const tile = document.createElement('div');
-                tile.className = `rounded-xl border overflow-hidden ${
+                const row = document.createElement('div');
+                row.className = `p-2.5 rounded-xl border space-y-1.5 ${
                     isCompleted ? 'bg-lime-950/30 border-lime-500/50' : isUnlocked ? 'bg-slate-900/80 border-purple-500/40' : 'bg-slate-950/60 border-slate-800 opacity-60'
                 }`;
 
                 const statusIcon = isCompleted ? '✅' : isUnlocked ? stage.icon : '🔒';
-                const subtitle = isUnlocked
-                    ? `Нужно ${stage.requiredAccuracy}%`
-                    : 'Заблокировано';
+                const subtitle = isCompleted
+                    ? `Лучший результат: ${record.bestAccuracy}%`
+                    : isUnlocked
+                        ? `Нужно ${stage.requiredAccuracy}% · ${stage.questionCount} вопросов`
+                        : 'Пройдите предыдущий этап';
                 const barColor = pct >= stage.requiredAccuracy ? '#84cc16' : pct > 0 ? '#eab308' : '#334155';
 
-                tile.innerHTML = `
-                    <div class="h-16 flex items-center justify-center text-3xl ${isUnlocked ? 'bg-slate-950/60' : 'bg-slate-950/90'}">
-                        ${statusIcon}${stage.isFinal ? ' 🎖️' : ''}
-                    </div>
-                    <div class="p-2 space-y-1">
-                        <div class="font-military text-[10px] leading-snug ${isUnlocked ? 'text-slate-200' : 'text-slate-500'} truncate" title="${stage.title}">${idx + 1}. ${stage.title}</div>
-                        <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
-                            <div style="width:${pct}%; background:${barColor};" class="h-full transition-all"></div>
-                        </div>
-                        <div class="flex items-center justify-between text-[9px] text-slate-400">
-                            <span>${subtitle}</span>
-                            <span>${pct}%</span>
+                row.innerHTML = `
+                    <div class="flex items-center justify-between space-x-2">
+                        <div class="flex items-center space-x-2 min-w-0">
+                            <span class="text-lg shrink-0">${statusIcon}</span>
+                            <div class="min-w-0">
+                                <div class="font-military text-[11px] ${isUnlocked ? 'text-slate-200' : 'text-slate-500'} truncate">${idx + 1}. ${stage.title}${stage.isFinal ? ' 🎖️' : ''}</div>
+                                <div class="text-[9px] text-slate-400">${subtitle}</div>
+                            </div>
                         </div>
                         ${isUnlocked ? `
-                            <div class="flex items-center space-x-1 pt-1">
-                                <button onclick="openStageStudy(${idx})" title="Изучение" class="flex-1 h-6 rounded bg-slate-800 border border-lime-500/40 text-lime-300 text-[10px] flex items-center justify-center">📖</button>
-                                <button onclick="openStageTraining(${idx})" title="Тренировка" class="flex-1 h-6 rounded bg-slate-800 border border-indigo-500/40 text-indigo-300 text-[10px] flex items-center justify-center">🎯</button>
+                            <div class="flex items-center space-x-1 shrink-0">
+                                <button onclick="openStageStudy(${idx})" title="Изучение" class="w-7 h-7 rounded-lg bg-slate-800 border border-lime-500/40 text-lime-300 text-xs flex items-center justify-center">📖</button>
+                                <button onclick="openStageTraining(${idx})" title="Тренировка" class="w-7 h-7 rounded-lg bg-slate-800 border border-indigo-500/40 text-indigo-300 text-xs flex items-center justify-center">🎯</button>
+                                <button onclick="startCampaignStage(${idx})" title="Контроль" class="btn-amber-glow px-2 py-1.5 rounded-lg font-military text-[9px] uppercase">${isCompleted ? 'ПОВТОР' : 'КОНТРОЛЬ'}</button>
                             </div>
-                            <button onclick="startCampaignStage(${idx})" class="btn-amber-glow w-full py-1.5 rounded font-military text-[9px] uppercase">${isCompleted ? 'ПОВТОР' : 'КОНТРОЛЬ'}</button>
                         ` : ''}
                     </div>
+                    <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
+                        <div style="width:${pct}%; background:${barColor};" class="h-full transition-all"></div>
+                    </div>
                 `;
-                list.appendChild(tile);
+                list.appendChild(row);
             });
         }
 
