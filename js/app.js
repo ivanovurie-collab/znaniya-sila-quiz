@@ -1,7 +1,7 @@
         // --- APP VERSION ---
         // Single source of truth for the version shown in the tab title and the main-menu badge —
         // bump this on every real content/feature change instead of editing those strings by hand.
-        const APP_VERSION = '5.9';
+        const APP_VERSION = '6.0';
 
         // --- GAME PERSISTENT STATE ---
         let playerData = {
@@ -3174,6 +3174,15 @@
                 document.getElementById('hudDisciplineBadge').innerText = diffLabel ? `${q.categoryName} · ${diffLabel}` : q.categoryName;
             }
             document.getElementById('questionText').innerText = q.question;
+
+            const qImageEl = document.getElementById('questionImage');
+            if (q.image) {
+                qImageEl.src = q.image;
+                qImageEl.classList.remove('hidden');
+            } else {
+                qImageEl.classList.add('hidden');
+                qImageEl.src = '';
+            }
 
             renderAvatarInto('playerAvatarDisplay');
             document.getElementById('p1ScoreNameDisplay').innerText = playerData.callsign;
