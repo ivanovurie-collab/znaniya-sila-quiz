@@ -369,11 +369,16 @@
             color: #bef264;
             background: rgba(132, 204, 22, 0.12);
         }
+        .nav-hud-icon {
+            width: 19px;
+            height: 19px;
+        }
 
         .nav-hud-home {
             background: linear-gradient(180deg, #84cc16 0%, #4d7c0f 100%);
             border: 2px solid #bef264;
             box-shadow: 0 0 16px rgba(132, 204, 22, 0.55), 0 4px 10px rgba(0, 0, 0, 0.5);
+            color: #0a120c;
         }
 
         @keyframes bossFlashPurple {

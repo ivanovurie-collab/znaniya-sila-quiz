@@ -551,31 +551,56 @@
 
         </main>
 
-        <!-- Bottom Icon Navigation -->
+        <!-- Bottom Icon Navigation — monochrome line icons (currentColor) instead of emoji, so it
+             doesn't inherit each device's own colourful emoji rendering and actually reads as one
+             consistent HUD control instead of a row of mismatched stickers. -->
         <nav class="bottom-nav-hud w-full flex items-center justify-between px-1 py-2 mb-1">
             <button onclick="openModal('friendsModal')" class="nav-hud-btn flex-1 flex flex-col items-center py-1 rounded-lg active:scale-95 transition-all">
-                <span class="text-lg leading-none">👥</span>
+                <svg class="nav-hud-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="9" cy="8" r="2.6"/>
+                    <path d="M4 19c0-2.8 2.2-5 5-5s5 2.2 5 5"/>
+                    <circle cx="17" cy="8.5" r="2.1"/>
+                    <path d="M15.2 14.3c2.3.3 4 2.2 4 4.7"/>
+                </svg>
                 <span class="text-[8px] font-military uppercase mt-0.5 tracking-wide">Отряд</span>
             </button>
             <button onclick="openCampaignModal()" class="nav-hud-btn flex-1 flex flex-col items-center py-1 rounded-lg active:scale-95 transition-all">
-                <span class="text-lg leading-none">🗺️</span>
+                <svg class="nav-hud-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 4 4 6v14l5-2 6 2 5-2V4l-5 2-6-2z"/>
+                    <path d="M9 4v14M15 6v14"/>
+                </svg>
                 <span class="text-[8px] font-military uppercase mt-0.5 tracking-wide">Кампания</span>
             </button>
             <button onclick="openModal('questsModal')" class="nav-hud-btn flex-1 flex flex-col items-center py-1 rounded-lg active:scale-95 transition-all relative">
-                <span class="text-lg leading-none">📜</span>
+                <svg class="nav-hud-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 3h9l3 3v15H6z"/>
+                    <path d="M15 3v3h3M9 11h6M9 15h6M9 19h3"/>
+                </svg>
                 <span class="text-[8px] font-military uppercase mt-0.5 tracking-wide">Квесты</span>
                 <span id="questPingDot" class="hidden absolute top-0 right-1/4 w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
                 <span id="questPingDotStatic" class="hidden absolute top-0 right-1/4 w-2 h-2 rounded-full bg-red-500"></span>
             </button>
             <button onclick="showScreen('screenMenu')" class="flex-1 flex flex-col items-center -mt-4">
-                <span class="nav-hud-home w-12 h-12 rounded-full flex items-center justify-center text-xl active:scale-95 transition-all">🏠</span>
+                <span class="nav-hud-home w-12 h-12 rounded-full flex items-center justify-center active:scale-95 transition-all">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;">
+                        <path d="M4 11.5 12 4l8 7.5"/>
+                        <path d="M6 10v9h12v-9"/>
+                        <path d="M10 19v-5h4v5"/>
+                    </svg>
+                </span>
             </button>
             <button onclick="openModal('profileModal')" class="nav-hud-btn flex-1 flex flex-col items-center py-1 rounded-lg active:scale-95 transition-all">
-                <span class="text-lg leading-none">🏆</span>
+                <svg class="nav-hud-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3 4 6v5c0 5 3.4 8.4 8 10 4.6-1.6 8-5 8-10V6z"/>
+                    <path d="m9.5 12 1.8 1.8L15 10"/>
+                </svg>
                 <span class="text-[8px] font-military uppercase mt-0.5 tracking-wide">Профиль</span>
             </button>
             <button onclick="openModal('armoryModal')" class="nav-hud-btn flex-1 flex flex-col items-center py-1 rounded-lg active:scale-95 transition-all">
-                <span class="text-lg leading-none">🎒</span>
+                <svg class="nav-hud-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 8 12 4l8 4v9l-8 4-8-4z"/>
+                    <path d="M4 8l8 4 8-4M12 12v9"/>
+                </svg>
                 <span class="text-[8px] font-military uppercase mt-0.5 tracking-wide">Магазин</span>
             </button>
         </nav>
@@ -1543,7 +1568,21 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').catch(() => {});
+                navigator.serviceWorker.register('sw.js').then((reg) => {
+                    // Check for a newer sw.js right away instead of waiting for the browser's own
+                    // (much slower) periodic check — this is what used to make players stuck on an
+                    // old cached build until they closed and reopened the app two or three times.
+                    reg.update().catch(() => {});
+                }).catch(() => {});
+
+                // Once a new service worker takes over, reload once so the fresh files actually
+                // apply immediately instead of only on some later visit.
+                let refreshedAfterUpdate = false;
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    if (refreshedAfterUpdate) return;
+                    refreshedAfterUpdate = true;
+                    window.location.reload();
+                });
             });
         }
     </script>
