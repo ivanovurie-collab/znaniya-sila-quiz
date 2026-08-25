@@ -50,25 +50,15 @@
         <!-- Header Bar -->
         <header class="w-full pt-1 pb-2 flex items-center justify-between border-b border-lime-500/30 bg-slate-950/60 backdrop-blur-md px-2 rounded-xl">
             
-            <!-- Player Tokens / Coins Display -->
-            <div onclick="openModal('armoryModal')" class="cursor-pointer flex items-center space-x-1.5 bg-amber-950/90 border border-amber-500/60 px-2.5 py-1 rounded-lg text-amber-300 font-mono text-xs active:scale-95 transition-all shadow-md">
+            <!-- Player Tokens / Coins Display — info only, shop is one tap away in the bottom nav -->
+            <div class="flex items-center space-x-1.5 bg-amber-950/90 border border-amber-500/60 px-2.5 py-1 rounded-lg text-amber-300 font-mono text-xs shadow-md">
                 <span class="text-sm">🪖</span>
                 <span id="headerTokensDisplay" class="font-bold text-amber-400">0</span>
                 <span class="text-[9px] text-amber-500 font-military uppercase">ЖЕТОНЫ</span>
             </div>
 
-            <!-- Quick Action Buttons — Профиль and Снабжение moved to the bottom nav, not duplicated here -->
+            <!-- Quick Action Buttons — Профиль, Снабжение and Квесты moved to the bottom nav -->
             <div class="flex items-center space-x-1">
-                <!-- Quests Button -->
-                <button onclick="openModal('questsModal')" class="px-1.5 py-1 rounded-lg bg-indigo-950/80 border border-indigo-500/50 text-indigo-300 flex flex-col items-center active:scale-95 transition-all relative">
-                    <span class="text-xs leading-none">📜</span>
-                    <span class="text-[7px] font-military uppercase mt-0.5 tracking-tight">КВЕСТЫ</span>
-                    <span id="questPingDot" class="hidden absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
-                    <span id="questPingDotStatic" class="hidden absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500"></span>
-                </button>
-
-                <div class="w-px h-6 bg-lime-500/20 mx-0.5"></div>
-
                 <!-- Music Button -->
                 <button onclick="openModal('musicModal')" class="px-1.5 py-1 rounded-lg bg-slate-900/90 border border-lime-500/40 text-lime-400 flex flex-col items-center active:scale-95 transition-all">
                     <span class="text-xs leading-none">🎵</span>
@@ -561,25 +551,31 @@
         </main>
 
         <!-- Bottom Icon Navigation -->
-        <nav class="w-full flex items-center justify-between bg-slate-950/80 backdrop-blur-md border border-lime-500/25 rounded-2xl px-1 py-1.5 mb-1">
-            <button onclick="openModal('friendsModal')" class="flex-1 flex flex-col items-center py-1 rounded-xl text-slate-400 active:scale-95 transition-all active:bg-lime-950/60">
+        <nav class="bottom-nav-hud w-full flex items-center justify-between px-1 py-2 mb-1">
+            <button onclick="openModal('friendsModal')" class="nav-hud-btn flex-1 flex flex-col items-center py-1 rounded-lg active:scale-95 transition-all">
                 <span class="text-lg leading-none">👥</span>
-                <span class="text-[8px] font-military uppercase mt-0.5">Отряд</span>
+                <span class="text-[8px] font-military uppercase mt-0.5 tracking-wide">Отряд</span>
             </button>
-            <button onclick="openCampaignModal()" class="flex-1 flex flex-col items-center py-1 rounded-xl text-slate-400 active:scale-95 transition-all active:bg-lime-950/60">
+            <button onclick="openCampaignModal()" class="nav-hud-btn flex-1 flex flex-col items-center py-1 rounded-lg active:scale-95 transition-all">
                 <span class="text-lg leading-none">🗺️</span>
-                <span class="text-[8px] font-military uppercase mt-0.5">Кампания</span>
+                <span class="text-[8px] font-military uppercase mt-0.5 tracking-wide">Кампания</span>
             </button>
-            <button onclick="showScreen('screenMenu')" class="flex-1 flex flex-col items-center -mt-3">
-                <span class="w-11 h-11 rounded-full bg-gradient-to-b from-lime-500 to-lime-700 border-2 border-lime-300 shadow-lg flex items-center justify-center text-xl active:scale-95 transition-all">🏠</span>
+            <button onclick="openModal('questsModal')" class="nav-hud-btn flex-1 flex flex-col items-center py-1 rounded-lg active:scale-95 transition-all relative">
+                <span class="text-lg leading-none">📜</span>
+                <span class="text-[8px] font-military uppercase mt-0.5 tracking-wide">Квесты</span>
+                <span id="questPingDot" class="hidden absolute top-0 right-1/4 w-2 h-2 rounded-full bg-red-500 animate-ping"></span>
+                <span id="questPingDotStatic" class="hidden absolute top-0 right-1/4 w-2 h-2 rounded-full bg-red-500"></span>
             </button>
-            <button onclick="openModal('profileModal')" class="flex-1 flex flex-col items-center py-1 rounded-xl text-slate-400 active:scale-95 transition-all active:bg-lime-950/60">
+            <button onclick="showScreen('screenMenu')" class="flex-1 flex flex-col items-center -mt-4">
+                <span class="nav-hud-home w-12 h-12 rounded-full flex items-center justify-center text-xl active:scale-95 transition-all">🏠</span>
+            </button>
+            <button onclick="openModal('profileModal')" class="nav-hud-btn flex-1 flex flex-col items-center py-1 rounded-lg active:scale-95 transition-all">
                 <span class="text-lg leading-none">🏆</span>
-                <span class="text-[8px] font-military uppercase mt-0.5">Профиль</span>
+                <span class="text-[8px] font-military uppercase mt-0.5 tracking-wide">Профиль</span>
             </button>
-            <button onclick="openModal('armoryModal')" class="flex-1 flex flex-col items-center py-1 rounded-xl text-slate-400 active:scale-95 transition-all active:bg-lime-950/60">
+            <button onclick="openModal('armoryModal')" class="nav-hud-btn flex-1 flex flex-col items-center py-1 rounded-lg active:scale-95 transition-all">
                 <span class="text-lg leading-none">🎒</span>
-                <span class="text-[8px] font-military uppercase mt-0.5">Магазин</span>
+                <span class="text-[8px] font-military uppercase mt-0.5 tracking-wide">Магазин</span>
             </button>
         </nav>
 

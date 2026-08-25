@@ -1,7 +1,7 @@
         // --- APP VERSION ---
         // Single source of truth for the version shown in the tab title and the main-menu badge —
         // bump this on every real content/feature change instead of editing those strings by hand.
-        const APP_VERSION = '5.8';
+        const APP_VERSION = '5.9';
 
         // --- GAME PERSISTENT STATE ---
         let playerData = {

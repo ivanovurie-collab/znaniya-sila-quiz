@@ -341,6 +341,41 @@
             box-shadow: 0 0 6px rgba(132, 204, 22, 0.7);
         }
 
+        /* Bottom icon navigation — HUD console look: corner brackets on all four sides plus a
+           glowing top edge, echoing .hud-card's corner-bracket motif instead of a plain rounded bar. */
+        .bottom-nav-hud {
+            position: relative;
+            background: var(--hud-panel-bg);
+            border: 1px solid rgba(132, 204, 22, 0.3);
+            border-radius: 0.9rem;
+            box-shadow: 0 -2px 12px rgba(132, 204, 22, 0.12), 0 8px 24px rgba(0, 0, 0, 0.6), inset 0 0 12px rgba(132, 204, 22, 0.05);
+        }
+        .bottom-nav-hud::before, .bottom-nav-hud::after {
+            content: '';
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-color: #84cc16;
+            pointer-events: none;
+        }
+        .bottom-nav-hud::before { top: -1px; left: -1px; border-top: 2px solid; border-left: 2px solid; border-top-left-radius: 0.6rem; }
+        .bottom-nav-hud::after { top: -1px; right: -1px; border-top: 2px solid; border-right: 2px solid; border-top-right-radius: 0.6rem; }
+
+        .nav-hud-btn {
+            color: #94a3b8;
+            transition: color 0.15s ease, background-color 0.15s ease;
+        }
+        .nav-hud-btn:active {
+            color: #bef264;
+            background: rgba(132, 204, 22, 0.12);
+        }
+
+        .nav-hud-home {
+            background: linear-gradient(180deg, #84cc16 0%, #4d7c0f 100%);
+            border: 2px solid #bef264;
+            box-shadow: 0 0 16px rgba(132, 204, 22, 0.55), 0 4px 10px rgba(0, 0, 0, 0.5);
+        }
+
         @keyframes bossFlashPurple {
             0% { background-color: rgba(168, 85, 247, 0.35); }
             100% { background-color: transparent; }
